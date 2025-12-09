@@ -11,6 +11,7 @@ class UInputMappingContext;
 class UInputAction;
 class USceneComponent;
 class UCameraComponent;
+class UFloatingPawnMovement;
 
 UCLASS()
 class BRIDGEANDBLADE_API APlayerCharacter : public APawn
@@ -40,6 +41,10 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Components")
 	UCameraComponent* Camera;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UFloatingPawnMovement* MovementComponent;
+
 
 	// Input
 	UPROPERTY(EditAnywhere, Category = "Input")
