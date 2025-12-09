@@ -12,6 +12,7 @@ class UInputAction;
 class USceneComponent;
 class UCameraComponent;
 class UFloatingPawnMovement;
+class UPaperFlipbookComponent;
 
 UCLASS()
 class BRIDGEANDBLADE_API APlayerCharacter : public APawn
@@ -35,6 +36,7 @@ public:
 
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* PlayerMesh;
+
 
 	UPROPERTY(EditAnywhere, Category = "Components")
 	USceneComponent* RootScene;
