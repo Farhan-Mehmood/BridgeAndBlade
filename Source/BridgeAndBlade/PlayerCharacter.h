@@ -33,8 +33,8 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-	UPROPERTY(VisibleAnywhere)
-	UStaticMeshComponent* PlayerMesh;
+	//UPROPERTY(VisibleAnywhere)
+	//UStaticMeshComponent* PlayerMesh;dawdaw
 
 	UPROPERTY(EditAnywhere, Category = "Components")
 	USceneComponent* RootScene;
