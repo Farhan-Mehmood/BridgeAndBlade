@@ -12,6 +12,7 @@ class UInputAction;
 class USceneComponent;
 class UCameraComponent;
 class UFloatingPawnMovement;
+class UPaperFlipbookComponent;
 
 UCLASS()
 class BRIDGEANDBLADE_API APlayerCharacter : public APawn
@@ -33,8 +34,9 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-	//UPROPERTY(VisibleAnywhere)
-	//UStaticMeshComponent* PlayerMesh;dawdaw
+	UPROPERTY(VisibleAnywhere)
+	UStaticMeshComponent* PlayerMesh;
+
 
 	UPROPERTY(EditAnywhere, Category = "Components")
 	USceneComponent* RootScene;
