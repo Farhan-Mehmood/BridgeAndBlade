@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "PaperBase.h"
 #include "CoreMinimal.h"
 #include "PaperCharacter.h"
 #include "PaperFlipbookComponent.h"
@@ -17,7 +18,7 @@ class UFloatingPawnMovement;
 class UPaperFlipbookComponent;
 
 UCLASS()
-class BRIDGEANDBLADE_API APaperChar : public APaperCharacter
+class BRIDGEANDBLADE_API APaperChar : public APaperBase
 {
 	GENERATED_BODY()
 
@@ -34,28 +35,8 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-	UPROPERTY(EditAnywhere, Category = "Animations")
-	UPaperFlipbook* IdleFlipbook;
 
-	UPROPERTY(EditAnywhere, Category = "Animations")
-	UPaperFlipbook* RunUpFlipbook;
-
-	UPROPERTY(EditAnywhere, Category = "Animations")
-	UPaperFlipbook* RunDownFlipbook;
-
-	UPROPERTY(EditAnywhere, Category = "Animations")
-	UPaperFlipbook* RunSideFlipbook;
-
-	bool bIsRunning = false;
-
-	void UpdateAnimation();
-
-	UPROPERTY(VisibleAnywhere)
-	UStaticMeshComponent* PlayerMesh;
-
-
-	UPROPERTY(EditAnywhere, Category = "Components")
-	USceneComponent* RootScene;
+	
 
 	UPROPERTY(EditAnywhere, Category = "Components")
 	UCameraComponent* Camera;

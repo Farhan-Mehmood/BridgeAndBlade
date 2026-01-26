@@ -74,49 +74,7 @@ void APaperChar::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
     }
 }
 
-void APaperChar::UpdateAnimation()
-{
-    const float Speed = GetVelocity().Size();
-	const float MoveY = GetVelocity().Y;
-	const float MoveX = GetVelocity().X;
 
-    if (Speed > 5.f && !bIsRunning)
-    {
-        if (MoveX < MoveY)
-        {
-            if (MoveY > 0)
-            {
-                GetSprite()->SetRelativeScale3D(FVector(1.f, 1.f, 1.f));
-                GetSprite()->SetFlipbook(RunSideFlipbook);
-                bIsRunning = true;
-            }
-            else
-            {
-				GetSprite()->SetRelativeScale3D(FVector(-1.f, -1.f, 1.f));
-                GetSprite()->SetFlipbook(RunSideFlipbook);
-                bIsRunning = true;
-			}
-        }
-        else
-        {
-            if (MoveX > 0)
-            {
-                GetSprite()->SetFlipbook(RunUpFlipbook);
-                bIsRunning = true;
-            }
-           else
-            {
-                GetSprite()->SetFlipbook(RunDownFlipbook);
-                bIsRunning = true;
-			}
-        }
-    }
-    else if (Speed <= 5.f && bIsRunning)
-    {
-        GetSprite()->SetFlipbook(IdleFlipbook);
-        bIsRunning = false;
-    }
-}
 
 // Movement input handlers
 void APaperChar::MoveUp(const FInputActionValue& Value)
