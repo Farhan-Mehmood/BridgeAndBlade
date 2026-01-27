@@ -36,31 +36,28 @@ public:
 
 public:
 
-	UPROPERTY(EditAnywhere, Category = "Components")
-	USceneComponent* RootScene;
-
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* CharacterMesh;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "Animation")
 	UPaperFlipbook* WalkUpFlipbook;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "Animation")
 	UPaperFlipbook* WalkDownFlipbook;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "Animation")
 	UPaperFlipbook* WalkSideFlipbook;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "Animation")
 	UPaperFlipbook* AttackUpFlipbook;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "Animation")
 	UPaperFlipbook* AttackDownFlipbook;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "Animation")
 	UPaperFlipbook* AttackSideFlipbook;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "Animation")
 	UPaperFlipbook* IdleFlipbook;
 
 	UPROPERTY(EditAnywhere)

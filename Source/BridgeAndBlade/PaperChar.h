@@ -13,7 +13,7 @@ class UInputMappingContext;
 class UInputAction;
 //class USceneComponent;
 class UCameraComponent;
-class UFloatingPawnMovement;
+//class UFloatingPawnMovement;
 
 UCLASS()
 class BRIDGEANDBLADE_API APaperChar : public APaperBase
@@ -33,14 +33,14 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-
-	
+	//UPROPERTY(EditAnywhere, Category = "Components")
+	//USceneComponent* RootScene;
 
 	UPROPERTY(EditAnywhere, Category = "Components")
 	UCameraComponent* Camera;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	UFloatingPawnMovement* MovementComponent;
+	//UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	//UFloatingPawnMovement* MovementComponent;
 
 	// Input
 	UPROPERTY(EditAnywhere, Category = "Input")

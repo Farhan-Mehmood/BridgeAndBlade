@@ -5,7 +5,7 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "Camera/CameraComponent.h"
-#include "GameFramework/FloatingPawnMovement.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 // Sets default values
 APaperChar::APaperChar()
@@ -13,17 +13,19 @@ APaperChar::APaperChar()
     // Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
     PrimaryActorTick.bCanEverTick = true;
 
-    RootComponent = RootScene;
+    //RootScene = CreateDefaultSubobject<USceneComponent>(TEXT("RootScene"));
+    //RootComponent = RootScene;
 
     //PlayerMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PlayerMesh"));
     //PlayerMesh->SetupAttachment(RootComponent);
 
     Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
-    //Camera->SetupAttachment(PlayerMesh);
 	Camera->SetupAttachment(RootComponent);
-    Camera->bUsePawnControlRotation = true;
+   //amera->SetRelativeLocation(FVector(-300.f, 0.f, 300.f)); // Behind and above
+    //mera->SetRelativeRotation(FRotator(-45.f, 0.f, 0.f)); // Angled down
+    Camera->bUsePawnControlRotation = false;
 
-    MovementComponent = CreateDefaultSubobject<UFloatingPawnMovement>(TEXT("MovementComponent"));
+   // MovementComponent = CreateDefaultSubobject<UFloatingPawnMovement>(TEXT("MovementComponent"));
     AutoPossessPlayer = EAutoReceiveInput::Player0;
 
 }
@@ -50,6 +52,7 @@ void APaperChar::Tick(float DeltaTime)
     Super::Tick(DeltaTime);
 
     const FVector Velocity = GetVelocity();
+    UE_LOG(LogTemp, Warning, TEXT("Tick"));
     const float MoveX = Velocity.X;
 
     // Deadzone to avoid jitter
@@ -60,6 +63,7 @@ void APaperChar::Tick(float DeltaTime)
     }
 
 	UpdateAnimation();
+
 }
 
 void APaperChar::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -79,12 +83,16 @@ void APaperChar::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
 // Movement input handlers
 void APaperChar::MoveUp(const FInputActionValue& Value)
 {
-    AddMovementInput(GetActorForwardVector() * Value.Get<float>());
+    float InputValue = Value.Get<float>();
+    UE_LOG(LogTemp, Warning, TEXT("MoveUp called: %f"), InputValue);
+   AddMovementInput(GetActorForwardVector() * InputValue);
 }
 
 void APaperChar::MoveRight(const FInputActionValue& Value)
 {
-    AddMovementInput(GetActorRightVector() * Value.Get<float>());
+    float InputValue = Value.Get<float>();
+    UE_LOG(LogTemp, Warning, TEXT("MoveRight called: %f"), InputValue);
+    AddMovementInput(GetActorRightVector() * InputValue);
 }
 
 void APaperChar::ZoomCamera(const FInputActionValue& Value)
