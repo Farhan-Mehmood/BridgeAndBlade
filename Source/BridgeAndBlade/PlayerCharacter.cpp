@@ -7,6 +7,7 @@
 #include "Camera/CameraComponent.h"
 #include "GameFramework/FloatingPawnMovement.h"
 
+
 // Sets default values
 APlayerCharacter::APlayerCharacter()
 {
@@ -47,7 +48,6 @@ void APlayerCharacter::BeginPlay()
 			Subsystem->AddMappingContext(DefaultMappingContext, 0);
 		}
 	}
-	
 }
 
 // Called every frame
