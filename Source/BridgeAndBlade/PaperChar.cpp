@@ -91,7 +91,7 @@ void APaperChar::ZoomCamera(const FInputActionValue& Value)
 {
     // Simple zoom by moving camera along its local X axis. Tune ZoomSpeed as needed.
     const float AxisValue = Value.Get<float>();
-    const float ZoomSpeed = 20.0f;
+    const float ZoomSpeed = 200.0f;
 
     if (Camera && FMath::Abs(AxisValue) > KINDA_SMALL_NUMBER)
     {
