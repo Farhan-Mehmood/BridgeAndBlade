@@ -4,11 +4,14 @@
 
 #include "PaperCharacter.h"
 #include "CoreMinimal.h"
+#include "PaperFlipbookComponent.h"
 #include "PaperBase.generated.h"
 
 class USceneComponent;
 class UStaticMeshComponent;
 class UPaperFlipbook;
+class UPaperFlipbookComponent;
+
 /**
  * 
  */

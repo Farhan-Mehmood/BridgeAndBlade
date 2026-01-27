@@ -5,17 +5,15 @@
 #include "PaperBase.h"
 #include "CoreMinimal.h"
 #include "PaperCharacter.h"
-#include "PaperFlipbookComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "InputActionValue.h"
 #include "PaperChar.generated.h"
 
 class UInputMappingContext;
 class UInputAction;
-class USceneComponent;
+//class USceneComponent;
 class UCameraComponent;
 class UFloatingPawnMovement;
-class UPaperFlipbookComponent;
 
 UCLASS()
 class BRIDGEANDBLADE_API APaperChar : public APaperBase

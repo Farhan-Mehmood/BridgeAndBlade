@@ -36,13 +36,13 @@ void APaperBase::UpdateAnimation()
             if (MoveY > 0)
             {
                 GetSprite()->SetRelativeScale3D(FVector(1.f, 1.f, 1.f));
-                GetSprite()->SetFlipbook(RunSideFlipbook);
+                GetSprite()->SetFlipbook(WalkSideFlipbook);
                 bIsMoving = true;
             }
             else
             {
                 GetSprite()->SetRelativeScale3D(FVector(-1.f, -1.f, 1.f));
-                GetSprite()->SetFlipbook(RunSideFlipbook);
+                GetSprite()->SetFlipbook(WalkSideFlipbook);
                 bIsMoving = true;
             }
         }
@@ -50,12 +50,12 @@ void APaperBase::UpdateAnimation()
         {
             if (MoveX > 0)
             {
-                GetSprite()->SetFlipbook(RunUpFlipbook);
+                GetSprite()->SetFlipbook(WalkUpFlipbook);
                 bIsMoving = true;
             }
             else
             {
-                GetSprite()->SetFlipbook(RunDownFlipbook);
+                GetSprite()->SetFlipbook(WalkDownFlipbook);
                 bIsMoving = true;
             }
         }
