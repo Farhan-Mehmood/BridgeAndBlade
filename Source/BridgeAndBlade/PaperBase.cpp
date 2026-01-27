@@ -6,10 +6,9 @@
 APaperBase::APaperBase()
 {
     // Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-    //PrimaryActorTick.bCanEverTick = true;
+    PrimaryActorTick.bCanEverTick = true;
 
-    RootScene = CreateDefaultSubobject<USceneComponent>(TEXT("RootScene"));
-    RootComponent = RootScene;
+    //RootComponent = RootScene;
 
     //PlayerMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PlayerMesh"));
     //PlayerMesh->SetupAttachment(RootComponent);
@@ -17,10 +16,13 @@ APaperBase::APaperBase()
 
 void APaperBase::BeginPlay()
 {
+    Super::BeginPlay();
 }
 
 void APaperBase::Tick(float DeltaTime)
 {
+    Super::Tick(DeltaTime);
+	UpdateAnimation();
 }
 
 void APaperBase::UpdateAnimation()

@@ -1,6 +1,0 @@
-00 Wood
-01 Stone
-02 Hammer_Part
-03 Hammer
-04 Stick
-05 Workbench
