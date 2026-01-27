@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <iostream>
+#include <list>
 #include "PaperCharacter.h"
 #include "CoreMinimal.h"
 #include "PaperFlipbookComponent.h"
@@ -69,4 +71,6 @@ public:
 
 	void UpdateAnimation();
 	bool bIsMoving = false;
+
+	std::list<std::string> drops;
 };
