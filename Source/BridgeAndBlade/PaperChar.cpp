@@ -62,7 +62,7 @@ void APaperChar::Tick(float DeltaTime)
         GetSprite()->SetRelativeScale3D(FVector(FacingScale, 1.f, 1.f));
     }
 
-	UpdateAnimation();
+	//UpdateAnimation();
 
 }
 

@@ -23,13 +23,18 @@ void APaperBase::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
 	UpdateAnimation();
+
+    if (health <= 0)
+    {
+
+    }
 }
 
 void APaperBase::UpdateAnimation()
 {
     const float Speed = GetVelocity().Size();
-    const float MoveY = GetVelocity().Y;
-    const float MoveX = GetVelocity().X;
+    const float MoveY = abs(GetVelocity().Y);
+    const float MoveX = abs(GetVelocity().X);
 
     if (Speed > 5.f && !bIsMoving)
     {
@@ -67,4 +72,9 @@ void APaperBase::UpdateAnimation()
         GetSprite()->SetFlipbook(IdleFlipbook);
         bIsMoving = false;
     }
+}
+
+void APaperBase::die(TArray<FString> drops)
+{
+	Destroy();
 }
