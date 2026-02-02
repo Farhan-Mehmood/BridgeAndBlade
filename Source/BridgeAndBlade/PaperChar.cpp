@@ -52,7 +52,7 @@ void APaperChar::Tick(float DeltaTime)
     Super::Tick(DeltaTime);
 
     const FVector Velocity = GetVelocity();
-    UE_LOG(LogTemp, Warning, TEXT("Tick"));
+    //UE_LOG(LogTemp, Warning, TEXT("Tick"));
     const float MoveX = Velocity.X;
 
     // Deadzone to avoid jitter
@@ -84,14 +84,14 @@ void APaperChar::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
 void APaperChar::MoveUp(const FInputActionValue& Value)
 {
     float InputValue = Value.Get<float>();
-    UE_LOG(LogTemp, Warning, TEXT("MoveUp called: %f"), InputValue);
+   //UE_LOG(LogTemp, Warning, TEXT("MoveUp called: %f"), InputValue);
    AddMovementInput(GetActorForwardVector() * InputValue);
 }
 
 void APaperChar::MoveRight(const FInputActionValue& Value)
 {
     float InputValue = Value.Get<float>();
-    UE_LOG(LogTemp, Warning, TEXT("MoveRight called: %f"), InputValue);
+    //UE_LOG(LogTemp, Warning, TEXT("MoveRight called: %f"), InputValue);
     AddMovementInput(GetActorRightVector() * InputValue);
 }
 
