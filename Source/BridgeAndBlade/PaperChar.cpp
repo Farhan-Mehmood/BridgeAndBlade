@@ -81,7 +81,6 @@ void APaperChar::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
 
 void APaperChar::MoveUp(const FInputActionValue& Value)
 {
-	UE_LOG(LogTemp, Log, TEXT("MoveUp input received"));
     float InputValue = Value.Get<float>();
     AddMovementInput(GetActorForwardVector() * InputValue);
 }
