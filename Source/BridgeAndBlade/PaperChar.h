@@ -35,6 +35,15 @@ protected:
 
     void UpdateWeaponRotation();
 
+    UPROPERTY(EditDefaultsOnly, Category = "UI")
+    TSubclassOf<class UInventoryWidget> InventoryWidgetClass;
+
+    UPROPERTY()
+    UInventoryWidget* InventoryWidget;
+
+    bool bIsInventoryOpen;
+    void OnInventoryInput();
+
 public:
     virtual void Tick(float DeltaTime) override;
     virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -110,6 +119,12 @@ public:
 
     float LastAttackTime;
     bool bCanAttack;
+
+    UPROPERTY(EditAnywhere, Category = "Input")
+    UInputAction* InventoryAction;
+
+    UFUNCTION(BlueprintCallable, Category = "UI")
+    void ToggleInventory();
 
     // Movement input handlers
     void MoveUp(const FInputActionValue& Value);

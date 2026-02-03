@@ -8,6 +8,13 @@
 #include "EnhancedInputSubsystems.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+<<<<<<< Updated upstream
+=======
+#include "Engine/EngineTypes.h"
+#include "Blueprint/UserWidget.h"
+#include "InventoryWidget.h"
+#include "PaperCharPlayerController.h"
+>>>>>>> Stashed changes
 
 APaperChar::APaperChar()
 {
@@ -23,6 +30,9 @@ APaperChar::APaperChar()
     LastAttackTime = 0.0f;
     bCanAttack = true;
     FacingDirection = FVector2D(1.f, 0.f); // Start facing right
+
+    bIsInventoryOpen = false;
+    InventoryWidget = nullptr;
 }
 
 void APaperChar::BeginPlay()
@@ -76,6 +86,7 @@ void APaperChar::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
         EIC->BindAction(MoveRightAction, ETriggerEvent::Triggered, this, &APaperChar::MoveRight);
         EIC->BindAction(ZoomCameraAction, ETriggerEvent::Triggered, this, &APaperChar::ZoomCamera);
         EIC->BindAction(AttackAction, ETriggerEvent::Started, this, &APaperChar::Attack);
+        EIC->BindAction(InventoryAction, ETriggerEvent::Started, this, &APaperChar::OnInventoryInput);
     }
 }
 
@@ -99,6 +110,72 @@ void APaperChar::ZoomCamera(const FInputActionValue& Value)
     if (Camera && FMath::Abs(AxisValue) > KINDA_SMALL_NUMBER)
     {
         Camera->AddLocalOffset(FVector(AxisValue * ZoomSpeed, 0.f, 0.f));
+    }
+}
+
+void APaperChar::OnInventoryInput()
+{
+    ToggleInventory();
+}
+
+void APaperChar::ToggleInventory()
+{
+    if (bIsInventoryOpen)
+    {
+        // Close inventory
+        if (InventoryWidget)
+        {
+            InventoryWidget->RemoveFromParent();
+            InventoryWidget = nullptr;
+        }
+
+        bIsInventoryOpen = false;
+
+        // Re-enable player input
+        APlayerController* PC = Cast<APlayerController>(GetController());
+        if (PC)
+        {
+            PC->SetInputMode(FInputModeGameOnly());
+            PC->bShowMouseCursor = false;
+        }
+    }
+    else
+    {
+        // Open inventory
+        if (InventoryWidgetClass)
+        {
+            APlayerController* PC = Cast<APlayerController>(GetController());
+            if (!PC)
+            {
+                UE_LOG(LogTemp, Error, TEXT("Failed to get PlayerController"));
+                return;
+            }
+
+            InventoryWidget = CreateWidget<UInventoryWidget>(PC, InventoryWidgetClass); // Create with PC, not World
+            if (InventoryWidget)
+            {
+                InventoryWidget->SetOwningCharacter(this);
+                InventoryWidget->AddToViewport();
+
+                // FIXED: Set input mode without SetWidgetToFocus
+                FInputModeGameAndUI InputMode;
+                InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+                PC->SetInputMode(InputMode);
+                PC->bShowMouseCursor = true;
+
+                bIsInventoryOpen = true;
+
+                UE_LOG(LogTemp, Log, TEXT("Inventory opened successfully"));
+            }
+            else
+            {
+                UE_LOG(LogTemp, Error, TEXT("Failed to create InventoryWidget"));
+            }
+        }
+        else
+        {
+            UE_LOG(LogTemp, Error, TEXT("InventoryWidgetClass is not set!"));
+        }
     }
 }
 
