@@ -1,9 +1,17 @@
+// Fill out your copyright notice in the Description page of Project Settings.
+
+
 #include "PaperBase.h"
 
 APaperBase::APaperBase()
 {
+    // Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
     PrimaryActorTick.bCanEverTick = true;
-    bHasMoved = false; // Initialize to false
+
+    //RootComponent = RootScene;
+
+    //PlayerMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PlayerMesh"));
+    //PlayerMesh->SetupAttachment(RootComponent);
 }
 
 void APaperBase::BeginPlay()
@@ -14,65 +22,59 @@ void APaperBase::BeginPlay()
 void APaperBase::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
-    UpdateAnimation();
+	UpdateAnimation();
 
     if (health <= 0)
     {
-        die(itemDrops);
+
     }
 }
 
 void APaperBase::UpdateAnimation()
 {
     const float Speed = GetVelocity().Size();
-    const float MoveY = GetVelocity().Y;
-    const float MoveX = GetVelocity().X;
+    const float MoveY = abs(GetVelocity().Y);
+    const float MoveX = abs(GetVelocity().X);
 
-    // Check if moving
-    if (Speed > 5.f)
+    if (Speed > 5.f && !bIsMoving)
     {
-        bHasMoved = true;
-
-        // Determine which direction is dominant
-        if (FMath::Abs(MoveX) > FMath::Abs(MoveY))
+        if (MoveX < MoveY)
         {
-            // Moving more horizontally
             if (MoveY > 0)
             {
-                // Moving right
                 GetSprite()->SetRelativeScale3D(FVector(1.f, 1.f, 1.f));
                 GetSprite()->SetFlipbook(WalkSideFlipbook);
+                bIsMoving = true;
             }
             else
             {
-                // Moving left
-                GetSprite()->SetRelativeScale3D(FVector(-1.f, 1.f, 1.f));
+                GetSprite()->SetRelativeScale3D(FVector(-1.f, -1.f, 1.f));
                 GetSprite()->SetFlipbook(WalkSideFlipbook);
+                bIsMoving = true;
             }
         }
         else
         {
-            // Moving more vertically
             if (MoveX > 0)
             {
-                // Moving forward/up
                 GetSprite()->SetFlipbook(WalkUpFlipbook);
+                bIsMoving = true;
             }
             else
             {
-                // Moving backward/down
                 GetSprite()->SetFlipbook(WalkDownFlipbook);
+                bIsMoving = true;
             }
         }
     }
-    // Optional: Handle idle state if you want
-    // else if (!bHasMoved)
-    // {
-    //     GetSprite()->SetFlipbook(IdleFlipbook);
-    // }
+    else if (Speed <= 5.f && bIsMoving)
+    {
+        GetSprite()->SetFlipbook(IdleFlipbook);
+        bIsMoving = false;
+    }
 }
 
 void APaperBase::die(TArray<FString> drops)
 {
-    Destroy();
+	Destroy();
 }

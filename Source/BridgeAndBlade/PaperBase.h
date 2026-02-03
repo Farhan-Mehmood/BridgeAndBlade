@@ -59,8 +59,6 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Animation")
 	UPaperFlipbook* IdleFlipbook;
 
-	bool bHasMoved = false;
-
 	UPROPERTY(EditAnywhere)
 	int health = 10;
 
