@@ -8,6 +8,8 @@
 #include "EnhancedInputSubsystems.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Engine/EngineTypes.h" // for UEngineTypes::ConvertToTraceType
+#include "PaperCharPlayerController.h"
 
 APaperChar::APaperChar()
 {
@@ -345,12 +347,54 @@ void APaperChar::Attack()
         return;
     }
 
+    if (!GetWorld())
+    {
+        return;
+    }
+
     float CurrentTime = GetWorld()->GetTimeSeconds();
     if (CurrentTime - LastAttackTime < (1.0f / EquippedWeapon->AttackSpeed))
     {
         return;
     }
 
+    // Determine a world-space target position from the mouse cursor.
+    APlayerController* PC = Cast<APlayerController>(GetController());
+    FVector TargetLocation;
+    bool bHaveTarget = false;
+    if (APaperCharPlayerController* PCC = Cast<APaperCharPlayerController>(PC))
+    {
+        // prefer a physics/UI hit under cursor
+        FHitResult Hit;
+        if (PCC->GetHitUnderCursorByChannel(ECC_Visibility, Hit))
+        {
+            TargetLocation = Hit.Location;
+            bHaveTarget = true;
+        }
+        else if (PCC->GetMouseWorldPointAtPlane(GetActorLocation().Z, TargetLocation))
+        {
+            bHaveTarget = true;
+        }
+    }
+
+    // Save rotation, rotate to face the target (2D), perform attack, then restore rotation.
+    const FRotator OldRotation = GetActorRotation();
+    if (bHaveTarget)
+    {
+        FVector Direction = TargetLocation - GetActorLocation();
+        Direction.Z = 0.0f;
+        if (!Direction.IsNearlyZero())
+        {
+            const FRotator LookRot = Direction.Rotation();
+            SetActorRotation(LookRot);
+
+            // Update FacingDirection used by UpdateWeaponRotation (normalized).
+            const FVector2D NewFacing = FVector2D(Direction.GetSafeNormal().X, Direction.GetSafeNormal().Y);
+            FacingDirection = NewFacing;
+        }
+    }
+
+    // Perform the weapon attack (WeaponBase uses Attacker rotation to determine sweep direction).
     EquippedWeapon->PerformAttack(this);
     LastAttackTime = CurrentTime;
 
@@ -358,4 +402,7 @@ void APaperChar::Attack()
     {
         PlayAnimMontage(EquippedWeapon->AttackMontage);
     }
+
+    // Restore previous actor rotation so the pawn's orientation isn't permanently changed by aiming.
+    SetActorRotation(OldRotation);
 }
