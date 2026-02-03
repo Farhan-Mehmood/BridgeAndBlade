@@ -2,37 +2,32 @@
 
 
 #include "PaperChar.h"
+#include "ItemDatabase.h"
+#include "ItemData.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
-// Sets default values
 APaperChar::APaperChar()
 {
-    // Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
     PrimaryActorTick.bCanEverTick = true;
 
-    //RootScene = CreateDefaultSubobject<USceneComponent>(TEXT("RootScene"));
-    //RootComponent = RootScene;
-
-    //PlayerMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PlayerMesh"));
-    //PlayerMesh->SetupAttachment(RootComponent);
-
     Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
-	Camera->SetupAttachment(RootComponent);
-   //amera->SetRelativeLocation(FVector(-300.f, 0.f, 300.f)); // Behind and above
-    //mera->SetRelativeRotation(FRotator(-45.f, 0.f, 0.f)); // Angled down
+    Camera->SetupAttachment(RootComponent);
     Camera->bUsePawnControlRotation = false;
 
-   // MovementComponent = CreateDefaultSubobject<UFloatingPawnMovement>(TEXT("MovementComponent"));
     AutoPossessPlayer = EAutoReceiveInput::Player0;
 
+    EquippedWeapon = nullptr;
+    LastAttackTime = 0.0f;
+    bCanAttack = true;
+    FacingDirection = FVector2D(1.f, 0.f); // Start facing right
 }
 
 void APaperChar::BeginPlay()
 {
-	Super::BeginPlay();
+    Super::BeginPlay();
 
     APlayerController* PC = Cast<APlayerController>(GetController());
     if (PC)
@@ -45,25 +40,30 @@ void APaperChar::BeginPlay()
             Subsystem->AddMappingContext(DefaultMappingContext, 0);
         }
     }
+
+    // Initialize the item database
+    if (ItemDataTable)
+    {
+        UItemDatabase::Get(this)->Initialize(ItemDataTable);
+    }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("ItemDataTable not assigned in PaperChar Blueprint!"));
+    }
+
+    // Test crafting
+    AddItemToInventory(TEXT("Wood"), 10);
+    AddItemToInventory(TEXT("Stone"), 10);
+
+    CraftItem(TEXT("WoodSword"));
+	CraftItem(TEXT("StoneSword"));
+    EquipWeapon(1);
 }
 
 void APaperChar::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
-
-    const FVector Velocity = GetVelocity();
-    //UE_LOG(LogTemp, Warning, TEXT("Tick"));
-    const float MoveX = Velocity.X;
-
-    // Deadzone to avoid jitter
-    if (FMath::Abs(MoveX) > 5.f)
-    {
-        const float FacingScale = (MoveX > 0.f) ? 1.f : -1.f;
-        GetSprite()->SetRelativeScale3D(FVector(FacingScale, 1.f, 1.f));
-    }
-
-	//UpdateAnimation();
-
+    UpdateWeaponRotation();
 }
 
 void APaperChar::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -75,34 +75,287 @@ void APaperChar::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
         EIC->BindAction(MoveUpAction, ETriggerEvent::Triggered, this, &APaperChar::MoveUp);
         EIC->BindAction(MoveRightAction, ETriggerEvent::Triggered, this, &APaperChar::MoveRight);
         EIC->BindAction(ZoomCameraAction, ETriggerEvent::Triggered, this, &APaperChar::ZoomCamera);
+        EIC->BindAction(AttackAction, ETriggerEvent::Started, this, &APaperChar::Attack);
     }
 }
 
-
-
-// Movement input handlers
 void APaperChar::MoveUp(const FInputActionValue& Value)
 {
     float InputValue = Value.Get<float>();
-   //UE_LOG(LogTemp, Warning, TEXT("MoveUp called: %f"), InputValue);
-   AddMovementInput(GetActorForwardVector() * InputValue);
+    AddMovementInput(GetActorForwardVector() * InputValue);
 }
 
 void APaperChar::MoveRight(const FInputActionValue& Value)
 {
     float InputValue = Value.Get<float>();
-    //UE_LOG(LogTemp, Warning, TEXT("MoveRight called: %f"), InputValue);
     AddMovementInput(GetActorRightVector() * InputValue);
 }
 
 void APaperChar::ZoomCamera(const FInputActionValue& Value)
 {
-    // Simple zoom by moving camera along its local X axis. Tune ZoomSpeed as needed.
     const float AxisValue = Value.Get<float>();
     const float ZoomSpeed = 200.0f;
 
     if (Camera && FMath::Abs(AxisValue) > KINDA_SMALL_NUMBER)
     {
         Camera->AddLocalOffset(FVector(AxisValue * ZoomSpeed, 0.f, 0.f));
+    }
+}
+
+void APaperChar::UpdateWeaponRotation()
+{
+    if (!EquippedWeapon)
+        return;
+
+    float Angle = 0.f;
+
+    // Cardinal directions
+    if (FMath::Abs(FacingDirection.X) > FMath::Abs(FacingDirection.Y))
+    {
+        Angle = (FacingDirection.X > 0.f) ? 90.f : 270.f;  // Right : Left
+    }
+    else
+    {
+        Angle = (FacingDirection.Y > 0.f) ? 0.f : 180.f;  // Forward : Back
+    }
+
+    FRotator NewRotation = FRotator(0.f, 0.f, Angle);
+    EquippedWeapon->SetActorRelativeRotation(NewRotation);
+}
+
+void APaperChar::AddItemToInventory(FName ItemName, int32 Amount)
+{
+    UItemDatabase* DB = UItemDatabase::Get(this);
+    FItemData ItemData;
+
+    if (!DB->GetItemData(ItemName, ItemData))
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Trying to add unknown item: %s"), *ItemName.ToString());
+        return;
+    }
+
+    // Handle based on item type
+    switch (ItemData.ItemType)
+    {
+    case EItemType::Material:
+    case EItemType::Consumable:
+        // Stackable items go into material inventory
+        if (MaterialInventory.Contains(ItemName))
+        {
+            MaterialInventory[ItemName] = FMath::Min(
+                MaterialInventory[ItemName] + Amount,
+                ItemData.MaxStackSize
+            );
+        }
+        else
+        {
+            MaterialInventory.Add(ItemName, FMath::Min(Amount, ItemData.MaxStackSize));
+        }
+        UE_LOG(LogTemp, Log, TEXT("Added %d %s (Total: %d)"),
+            Amount, *ItemName.ToString(), MaterialInventory[ItemName]);
+        break;
+
+    case EItemType::Weapon:
+        // Weapons go into weapon inventory
+        for (int32 i = 0; i < Amount; ++i)
+        {
+            WeaponInventory.Add(ItemName);
+        }
+        UE_LOG(LogTemp, Log, TEXT("Added weapon: %s"), *ItemName.ToString());
+        break;
+
+    case EItemType::Placeable:
+        // Placeables could go into a separate inventory
+        // For now, treat like materials
+        if (MaterialInventory.Contains(ItemName))
+        {
+            MaterialInventory[ItemName] += Amount;
+        }
+        else
+        {
+            MaterialInventory.Add(ItemName, Amount);
+        }
+        break;
+    }
+}
+
+int32 APaperChar::GetItemCount(FName ItemName) const
+{
+    if (MaterialInventory.Contains(ItemName))
+    {
+        return MaterialInventory[ItemName];
+    }
+
+    // Count weapons
+    int32 WeaponCount = 0;
+    for (const FName& WeaponName : WeaponInventory)
+    {
+        if (WeaponName == ItemName)
+        {
+            WeaponCount++;
+        }
+    }
+
+    return WeaponCount;
+}
+
+bool APaperChar::HasItem(FName ItemName, int32 Amount) const
+{
+    return GetItemCount(ItemName) >= Amount;
+}
+
+bool APaperChar::RemoveItem(FName ItemName, int32 Amount)
+{
+    if (!HasItem(ItemName, Amount))
+    {
+        return false;
+    }
+
+    if (MaterialInventory.Contains(ItemName))
+    {
+        MaterialInventory[ItemName] -= Amount;
+        if (MaterialInventory[ItemName] <= 0)
+        {
+            MaterialInventory.Remove(ItemName);
+        }
+        return true;
+    }
+
+    // Remove from weapon inventory
+    int32 RemovedCount = 0;
+    for (int32 i = WeaponInventory.Num() - 1; i >= 0 && RemovedCount < Amount; --i)
+    {
+        if (WeaponInventory[i] == ItemName)
+        {
+            WeaponInventory.RemoveAt(i);
+            RemovedCount++;
+        }
+    }
+
+    return RemovedCount == Amount;
+}
+
+bool APaperChar::CanCraftItem(FName ItemName) const
+{
+    return UItemDatabase::Get(const_cast<APaperChar*>(this))->CanCraftItem(ItemName, MaterialInventory);
+}
+
+bool APaperChar::CraftItem(FName ItemName)
+{
+    UItemDatabase* DB = UItemDatabase::Get(this);
+    FItemData ItemData;
+
+    if (!DB->GetItemData(ItemName, ItemData))
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Item '%s' not found in database"), *ItemName.ToString());
+        return false;
+    }
+
+    if (!ItemData.bIsCraftable)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Item '%s' is not craftable"), *ItemName.ToString());
+        return false;
+    }
+
+    if (!CanCraftItem(ItemName))
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Not enough materials to craft '%s'"), *ItemName.ToString());
+        return false;
+    }
+
+    // Consume materials
+    for (const FCraftingRequirement& Requirement : ItemData.CraftingRequirements)
+    {
+        RemoveItem(Requirement.ItemName, Requirement.Amount);
+    }
+
+    // Add crafted item to inventory
+    AddItemToInventory(ItemName, 1);
+
+    UE_LOG(LogTemp, Log, TEXT("Successfully crafted: %s"), *ItemName.ToString());
+    return true;
+}
+
+void APaperChar::EquipWeapon(int32 InventoryIndex)
+{
+    if (!WeaponInventory.IsValidIndex(InventoryIndex))
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Invalid weapon inventory index: %d"), InventoryIndex);
+        return;
+    }
+
+    UnequipWeapon();
+
+    // Get weapon data from database
+    FName WeaponName = WeaponInventory[InventoryIndex];
+    UItemDatabase* DB = UItemDatabase::Get(this);
+    FItemData ItemData;
+
+    if (!DB->GetItemData(WeaponName, ItemData))
+    {
+        UE_LOG(LogTemp, Error, TEXT("Weapon '%s' not found in database"), *WeaponName.ToString());
+        return;
+    }
+
+    if (ItemData.ItemType != EItemType::Weapon || !ItemData.WeaponClass)
+    {
+        UE_LOG(LogTemp, Error, TEXT("Item '%s' is not a valid weapon"), *WeaponName.ToString());
+        return;
+    }
+
+    // Spawn weapon
+    FActorSpawnParameters SpawnParams;
+    SpawnParams.Owner = this;
+    SpawnParams.Instigator = GetInstigator();
+
+    EquippedWeapon = GetWorld()->SpawnActor<AWeaponBase>(
+        ItemData.WeaponClass,
+        FVector::ZeroVector,
+        FRotator::ZeroRotator,
+        SpawnParams
+    );
+
+    if (EquippedWeapon)
+    {
+        EquippedWeapon->AttachToComponent(
+            GetSprite(),
+            FAttachmentTransformRules::SnapToTargetNotIncludingScale,
+            NAME_None
+        );
+        EquippedWeapon->SetActorRelativeLocation(WeaponRelativeLocation);
+        EquippedWeapon->SetActorRelativeRotation(WeaponRelativeRotation);
+
+        UE_LOG(LogTemp, Log, TEXT("Equipped weapon: %s"), *WeaponName.ToString());
+    }
+}
+
+void APaperChar::UnequipWeapon()
+{
+    if (EquippedWeapon)
+    {
+        EquippedWeapon->Destroy();
+        EquippedWeapon = nullptr;
+    }
+}
+
+void APaperChar::Attack()
+{
+    if (!EquippedWeapon || !bCanAttack)
+    {
+        return;
+    }
+
+    float CurrentTime = GetWorld()->GetTimeSeconds();
+    if (CurrentTime - LastAttackTime < (1.0f / EquippedWeapon->AttackSpeed))
+    {
+        return;
+    }
+
+    EquippedWeapon->PerformAttack(this);
+    LastAttackTime = CurrentTime;
+
+    if (EquippedWeapon->AttackMontage)
+    {
+        PlayAnimMontage(EquippedWeapon->AttackMontage);
     }
 }

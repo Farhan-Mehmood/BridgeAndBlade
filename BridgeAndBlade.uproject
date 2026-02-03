@@ -11,7 +11,7 @@
 			"AdditionalDependencies": [
 				"Engine",
 				"Paper2D",
-				"AIModule"
+				"CoreUObject"
 			]
 		}
 	],
@@ -22,10 +22,6 @@
 			"TargetAllowList": [
 				"Editor"
 			]
-		},
-		{
-			"Name": "DaySequence",
-			"Enabled": true
 		}
 	]
 }
