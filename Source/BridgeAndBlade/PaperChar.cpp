@@ -57,7 +57,7 @@ void APaperChar::BeginPlay()
 
     CraftItem(TEXT("WoodSword"));
 	CraftItem(TEXT("StoneSword"));
-    EquipWeapon(0);
+    EquipWeapon(1);
 }
 
 void APaperChar::Tick(float DeltaTime)

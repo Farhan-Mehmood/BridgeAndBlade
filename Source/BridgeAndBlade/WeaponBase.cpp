@@ -115,6 +115,8 @@ void AWeaponBase::PerformAttack(AActor* Attacker)
 
 void AWeaponBase::SwingAttack(AActor* Attacker)
 {
+    if (!Attacker) return;
+
     // Start swing animation
     bIsAnimating = true;
     AnimationTimer = 0.0f;
@@ -122,31 +124,39 @@ void AWeaponBase::SwingAttack(AActor* Attacker)
 
     // Perform a sweeping arc attack
     FVector StartLocation = AttackPoint->GetComponentLocation();
-    FVector ForwardVector = Attacker->GetActorForwardVector();
+
+    // Use the attacker's world rotation as the base rotation for sweep directions
+    FRotator BaseRotation = Attacker->GetActorRotation();
 
     TArray<FHitResult> HitResults;
     FCollisionQueryParams QueryParams;
     QueryParams.AddIgnoredActor(Attacker);
     QueryParams.AddIgnoredActor(this);
 
-    // Sweep in an arc (simplified - sweep from left to right)
-    for (int32 i = -45; i <= 45; i += 15)
+    // Sweep in an arc: compute a fresh sweep direction each iteration (don't mutate ForwardVector)
+    for (int32 Angle = -45; Angle <= 45; Angle += 15)
     {
-        FRotator Rotation = ForwardVector.Rotation();
-        Rotation.Yaw += i;
-        FVector SweepDirection = Rotation.Vector();
+        FRotator SweepRot = BaseRotation;
+        SweepRot.Yaw += Angle;
+
+        // Get forward vector for this rotated yaw
+        FVector SweepDirection = SweepRot.Vector();
         FVector EndLocation = StartLocation + (SweepDirection * AttackRange);
 
         FHitResult Hit;
-        if (GetWorld()->LineTraceSingleByChannel(Hit, StartLocation, EndLocation,
-            ECC_Pawn, QueryParams))
+        if (GetWorld() && GetWorld()->LineTraceSingleByChannel(Hit, StartLocation, EndLocation, ECC_Pawn, QueryParams))
         {
             HitResults.Add(Hit);
-            DrawDebugLine(GetWorld(), StartLocation, EndLocation, FColor::Red, false, 1.0f);
+            DrawDebugLine(GetWorld(), StartLocation, EndLocation, FColor::Red, false, 1.0f, 0, 2.0f);
+        }
+        else if (GetWorld())
+        {
+            // draw misses too for debug
+            DrawDebugLine(GetWorld(), StartLocation, EndLocation, FColor::Blue, false, 1.0f, 0, 1.0f);
         }
     }
 
-    // Deal damage to all hit actors
+    // Deal damage to all unique hit actors
     TSet<AActor*> HitActors;
     for (const FHitResult& Hit : HitResults)
     {
