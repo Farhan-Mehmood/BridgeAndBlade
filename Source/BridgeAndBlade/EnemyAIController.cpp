@@ -47,6 +47,13 @@ void AEnemyAIController::Tick(float DeltaSeconds)
 
     APaperEnemy* EnemyPawn = Cast<APaperEnemy>(ControlledPawn);
 
+    // If the enemy is currently winding up an attack, ensure it isn't moved and skip issuing MoveTo.
+    if (EnemyPawn && EnemyPawn->IsWindingUp())
+    {
+        StopMovement();
+        return;
+    }
+
     // Use the enemy's AttackRange as the reference. Distance check uses the full AttackRange.
     const float EffectiveAttackRange = (EnemyPawn != nullptr) ? EnemyPawn->AttackRange : 120.0f;
     const float AttackRangeSqr = EffectiveAttackRange * EffectiveAttackRange;
