@@ -5,6 +5,7 @@
 #include "PaperSpriteComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "DrawDebugHelpers.h"
+#include "PaperBase.h"
 
 // Sets default values
 AWeaponBase::AWeaponBase()
@@ -223,8 +224,15 @@ void AWeaponBase::DealDamage(AActor* Target, AActor* Attacker)
 {
     if (!Target) return;
 
-    UGameplayStatics::ApplyDamage(Target, Damage, Attacker->GetInstigatorController(),
-        Attacker, UDamageType::StaticClass());
+    //UGameplayStatics::ApplyDamage(Target, Damage, Attacker->GetInstigatorController(),
+    //    Attacker, UDamageType::StaticClass());
+
+    APaperBase* PaperChar = Cast<APaperBase>(Target);
+    if (PaperChar)
+    {
+		PaperChar->TakeAHit(Damage);
+		UE_LOG(LogTemp, Log, TEXT("%s dealt %.1f damage to %s"), *Attacker->GetName(), Damage, *Target->GetName());
+	}
 }
 
 void AWeaponBase::AnimateSwing()

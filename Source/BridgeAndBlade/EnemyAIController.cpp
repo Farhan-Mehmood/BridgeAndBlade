@@ -34,14 +34,14 @@ void AEnemyAIController::Tick(float DeltaSeconds)
     APawn* ControlledPawn = GetPawn();
     if (!ControlledPawn)
     {
-        UE_LOG(LogTemp, Warning, TEXT("EnemyAIController has no controlled pawn"));
+        //UE_LOG(LogTemp, Warning, TEXT("EnemyAIController has no controlled pawn"));
         return;
     }
 
     APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
     if (!PlayerPawn)
     {
-        UE_LOG(LogTemp, Warning, TEXT("EnemyAIController cannot find player pawn"));
+        //UE_LOG(LogTemp, Warning, TEXT("EnemyAIController cannot find player pawn"));
         return;
     }
 
@@ -62,7 +62,7 @@ void AEnemyAIController::Tick(float DeltaSeconds)
 
         if (EnemyPawn)
         {
-            UE_LOG(LogTemp, Log, TEXT("Enemy %s in attack range, attacking player"), *ControlledPawn->GetName());
+            //UE_LOG(LogTemp, Log, TEXT("Enemy %s in attack range, attacking player"), *ControlledPawn->GetName());
             EnemyPawn->Attack(PlayerPawn); // Attack implements cooldown and uses DamageAmount
         }
 
@@ -76,7 +76,7 @@ void AEnemyAIController::Tick(float DeltaSeconds)
     // Avoid re-requesting MoveTo every tick if already moving (reduces churn).
     if (GetMoveStatus() != EPathFollowingStatus::Moving)
     {
-        UE_LOG(LogTemp, Verbose, TEXT("Enemy %s moving toward player (tight acceptance = %f, attack = %f)"), *ControlledPawn->GetName(), TightAcceptance, EffectiveAttackRange);
+        //UE_LOG(LogTemp, Verbose, TEXT("Enemy %s moving toward player (tight acceptance = %f, attack = %f)"), *ControlledPawn->GetName(), TightAcceptance, EffectiveAttackRange);
         MoveToActor(PlayerPawn, TightAcceptance);
     }
 }

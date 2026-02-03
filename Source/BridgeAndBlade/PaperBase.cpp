@@ -15,11 +15,6 @@ void APaperBase::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
     UpdateAnimation();
-
-    if (health <= 0)
-    {
-        die(itemDrops);
-    }
 }
 
 void APaperBase::UpdateAnimation()
@@ -34,9 +29,9 @@ void APaperBase::UpdateAnimation()
         bHasMoved = true;
 
         // Determine which direction is dominant
-        if (FMath::Abs(MoveX) > FMath::Abs(MoveY))
+        if (FMath::Abs(MoveY) > FMath::Abs(MoveX))
         {
-            // Moving more horizontally
+            // Moving more horizontally (Y axis: side to side)
             if (MoveY > 0)
             {
                 // Moving right
@@ -52,15 +47,15 @@ void APaperBase::UpdateAnimation()
         }
         else
         {
-            // Moving more vertically
+            // Moving more vertically (X axis: up and down)
             if (MoveX > 0)
             {
-                // Moving forward/up
+                // Moving up
                 GetSprite()->SetFlipbook(WalkUpFlipbook);
             }
             else
             {
-                // Moving backward/down
+                // Moving down
                 GetSprite()->SetFlipbook(WalkDownFlipbook);
             }
         }
@@ -70,6 +65,16 @@ void APaperBase::UpdateAnimation()
     // {
     //     GetSprite()->SetFlipbook(IdleFlipbook);
     // }
+}
+
+void APaperBase::TakeAHit(int damageAmount)
+{
+    health -= damageAmount;
+
+    if (health <= 0)
+    {
+        die(itemDrops);
+    }
 }
 
 void APaperBase::die(TArray<FString> drops)
