@@ -73,5 +73,6 @@ public:
 	UPROPERTY(EditAnywhere)
 	TArray<FString> itemDrops;
 
+	void TakeAHit(int damageAmount);
 	void die(TArray<FString> drops);
 };
