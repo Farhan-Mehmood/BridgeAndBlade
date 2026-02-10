@@ -135,10 +135,10 @@ void AWeaponBase::SwingAttack(AActor* Attacker)
     QueryParams.AddIgnoredActor(this);
 
     // Sweep in an arc: compute a fresh sweep direction each iteration (don't mutate ForwardVector)
-    for (int32 Angle = -45; Angle <= 45; Angle += 5)
+    for (int Angle = -45; Angle <= 45; Angle += 15)
     {
         FRotator SweepRot = BaseRotation;
-        SweepRot.Yaw += Angle;
+        SweepRot.Roll += Angle;
 
         // Get forward vector for this rotated yaw
         FVector SweepDirection = SweepRot.Vector();

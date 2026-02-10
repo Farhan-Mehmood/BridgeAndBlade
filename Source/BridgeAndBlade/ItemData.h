@@ -23,13 +23,13 @@ struct FCraftingRequirement
     FName ItemName;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    int32 Amount;
+    int Amount;
 
     FCraftingRequirement()
         : ItemName(NAME_None), Amount(0)
     {}
 
-    FCraftingRequirement(FName InName, int32 InAmount)
+    FCraftingRequirement(FName InName, int InAmount)
         : ItemName(InName), Amount(InAmount)
     {}
 };
@@ -55,7 +55,7 @@ struct FItemData : public FTableRowBase
     UTexture2D* Icon;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Basic Info")
-    int32 MaxStackSize;
+    int MaxStackSize;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Crafting")
     TArray<FCraftingRequirement> CraftingRequirements;

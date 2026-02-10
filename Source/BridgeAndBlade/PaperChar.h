@@ -35,6 +35,15 @@ protected:
 
     void UpdateWeaponRotation();
 
+    UPROPERTY(EditDefaultsOnly, Category = "UI")
+    TSubclassOf<class UInventoryWidget> InventoryWidgetClass;
+
+    UPROPERTY()
+    UInventoryWidget* InventoryWidget;
+
+    bool bIsInventoryOpen;
+    void OnInventoryInput();
+
 public:
     virtual void Tick(float DeltaTime) override;
     virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -76,27 +85,27 @@ public:
     TArray<FName> WeaponInventory;
 
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Inventory")
-    TMap<FName, int32> MaterialInventory;
+    TMap<FName, int> MaterialInventory;
 
 
     // Inventory functions
     UFUNCTION(BlueprintCallable, Category = "Inventory")
-    void AddItemToInventory(FName ItemName, int32 Amount = 1);
+    void AddItemToInventory(FName ItemName, int Amount = 1);
 
     UFUNCTION(BlueprintCallable, Category = "Inventory")
-    void EquipWeapon(int32 InventoryIndex);
+    void EquipWeapon(int InventoryIndex);
 
     UFUNCTION(BlueprintCallable, Category = "Inventory")
     void UnequipWeapon();
 
     UFUNCTION(BlueprintCallable, Category = "Inventory")
-    int32 GetItemCount(FName ItemName) const;
+    int GetItemCount(FName ItemName) const;
 
     UFUNCTION(BlueprintCallable, Category = "Inventory")
-    bool HasItem(FName ItemName, int32 Amount = 1) const;
+    bool HasItem(FName ItemName, int Amount = 1) const;
 
     UFUNCTION(BlueprintCallable, Category = "Inventory")
-    bool RemoveItem(FName ItemName, int32 Amount = 1);
+    bool RemoveItem(FName ItemName, int Amount = 1);
 
     // Crafting
     UFUNCTION(BlueprintCallable, Category = "Crafting")
@@ -110,6 +119,12 @@ public:
 
     float LastAttackTime;
     bool bCanAttack;
+
+    UPROPERTY(EditAnywhere, Category = "Input")
+    UInputAction* InventoryAction;
+
+    UFUNCTION(BlueprintCallable, Category = "UI")
+    void ToggleInventory();
 
     // Movement input handlers
     void MoveUp(const FInputActionValue& Value);

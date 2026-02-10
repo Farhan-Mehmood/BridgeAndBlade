@@ -10,6 +10,9 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Engine/EngineTypes.h" // for UEngineTypes::ConvertToTraceType
 #include "PaperCharPlayerController.h"
+#include "Engine/EngineTypes.h"
+#include "Blueprint/UserWidget.h"
+#include "InventoryWidget.h"
 
 APaperChar::APaperChar()
 {
@@ -25,6 +28,9 @@ APaperChar::APaperChar()
     LastAttackTime = 0.0f;
     bCanAttack = true;
     FacingDirection = FVector2D(1.f, 0.f); // Start facing right
+
+    bIsInventoryOpen = false;
+    InventoryWidget = nullptr;
 }
 
 void APaperChar::BeginPlay()
@@ -66,6 +72,18 @@ void APaperChar::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
     UpdateWeaponRotation();
+
+	FacingDirection = FVector2D(GetVelocity().GetSafeNormal2D());
+
+	// Handle attack cooldown
+    if (!bCanAttack)
+    {
+        float CurrentTime = GetWorld()->GetTimeSeconds();
+        if (CurrentTime - LastAttackTime >= 1.0f) // 1 second cooldown
+        {
+            bCanAttack = true;
+        }
+	}
 }
 
 void APaperChar::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -78,29 +96,100 @@ void APaperChar::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
         EIC->BindAction(MoveRightAction, ETriggerEvent::Triggered, this, &APaperChar::MoveRight);
         EIC->BindAction(ZoomCameraAction, ETriggerEvent::Triggered, this, &APaperChar::ZoomCamera);
         EIC->BindAction(AttackAction, ETriggerEvent::Started, this, &APaperChar::Attack);
+        EIC->BindAction(InventoryAction, ETriggerEvent::Started, this, &APaperChar::OnInventoryInput);
     }
 }
 
 void APaperChar::MoveUp(const FInputActionValue& Value)
 {
-    float InputValue = Value.Get<float>();
-    AddMovementInput(GetActorForwardVector() * InputValue);
+    if (bCanAttack)
+    {
+        float InputValue = Value.Get<float>();
+        AddMovementInput(GetActorForwardVector() * InputValue);
+    }
 }
 
 void APaperChar::MoveRight(const FInputActionValue& Value)
 {
-    float InputValue = Value.Get<float>();
-    AddMovementInput(GetActorRightVector() * InputValue);
+    if (bCanAttack)
+    {
+        float InputValue = Value.Get<float>();
+        AddMovementInput(GetActorRightVector() * InputValue);
+    }
 }
 
 void APaperChar::ZoomCamera(const FInputActionValue& Value)
 {
     const float AxisValue = Value.Get<float>();
-    const float ZoomSpeed = 200.0f;
+    const float ZoomSpeed = 50.0f;
 
     if (Camera && FMath::Abs(AxisValue) > KINDA_SMALL_NUMBER)
     {
         Camera->AddLocalOffset(FVector(AxisValue * ZoomSpeed, 0.f, 0.f));
+    }
+}
+
+void APaperChar::OnInventoryInput()
+{
+    ToggleInventory();
+}
+
+void APaperChar::ToggleInventory()
+{
+    if (bIsInventoryOpen)
+    {
+        // Close inventory
+        if (InventoryWidget)
+        {
+            InventoryWidget->RemoveFromParent();
+            InventoryWidget = nullptr;
+        }
+
+        bIsInventoryOpen = false;
+
+        // Re-enable player input
+        APlayerController* PC = Cast<APlayerController>(GetController());
+        if (PC)
+        {
+            PC->SetInputMode(FInputModeGameOnly());
+            PC->bShowMouseCursor = false;
+        }
+    }
+    else
+    {
+        // Open inventory
+        if (InventoryWidgetClass)
+        {
+            APlayerController* PC = Cast<APlayerController>(GetController());
+            if (!PC)
+            {
+                UE_LOG(LogTemp, Error, TEXT("Failed to get PlayerController"));
+                return;
+            }
+
+            InventoryWidget = CreateWidget<UInventoryWidget>(PC, InventoryWidgetClass); // Create with PC, not World
+            if (InventoryWidget)
+            {
+                InventoryWidget->SetOwningCharacter(this);
+                InventoryWidget->AddToViewport();
+
+                // FIXED: Set input mode without SetWidgetToFocus
+                FInputModeGameAndUI InputMode;
+                InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+                PC->SetInputMode(InputMode);
+                PC->bShowMouseCursor = true;
+
+                bIsInventoryOpen = true;
+            }
+            else
+            {
+                UE_LOG(LogTemp, Error, TEXT("Failed to create InventoryWidget"));
+            }
+        }
+        else
+        {
+            UE_LOG(LogTemp, Error, TEXT("InventoryWidgetClass is not set!"));
+        }
     }
 }
 
@@ -125,7 +214,7 @@ void APaperChar::UpdateWeaponRotation()
     EquippedWeapon->SetActorRelativeRotation(NewRotation);
 }
 
-void APaperChar::AddItemToInventory(FName ItemName, int32 Amount)
+void APaperChar::AddItemToInventory(FName ItemName, int Amount)
 {
     UItemDatabase* DB = UItemDatabase::Get(this);
     FItemData ItemData;
@@ -153,17 +242,14 @@ void APaperChar::AddItemToInventory(FName ItemName, int32 Amount)
         {
             MaterialInventory.Add(ItemName, FMath::Min(Amount, ItemData.MaxStackSize));
         }
-        UE_LOG(LogTemp, Log, TEXT("Added %d %s (Total: %d)"),
-            Amount, *ItemName.ToString(), MaterialInventory[ItemName]);
         break;
 
     case EItemType::Weapon:
         // Weapons go into weapon inventory
-        for (int32 i = 0; i < Amount; ++i)
+        for (int i = 0; i < Amount; ++i)
         {
             WeaponInventory.Add(ItemName);
         }
-        UE_LOG(LogTemp, Log, TEXT("Added weapon: %s"), *ItemName.ToString());
         break;
 
     case EItemType::Placeable:
@@ -181,7 +267,7 @@ void APaperChar::AddItemToInventory(FName ItemName, int32 Amount)
     }
 }
 
-int32 APaperChar::GetItemCount(FName ItemName) const
+int APaperChar::GetItemCount(FName ItemName) const
 {
     if (MaterialInventory.Contains(ItemName))
     {
@@ -189,7 +275,7 @@ int32 APaperChar::GetItemCount(FName ItemName) const
     }
 
     // Count weapons
-    int32 WeaponCount = 0;
+    int WeaponCount = 0;
     for (const FName& WeaponName : WeaponInventory)
     {
         if (WeaponName == ItemName)
@@ -201,12 +287,12 @@ int32 APaperChar::GetItemCount(FName ItemName) const
     return WeaponCount;
 }
 
-bool APaperChar::HasItem(FName ItemName, int32 Amount) const
+bool APaperChar::HasItem(FName ItemName, int Amount) const
 {
     return GetItemCount(ItemName) >= Amount;
 }
 
-bool APaperChar::RemoveItem(FName ItemName, int32 Amount)
+bool APaperChar::RemoveItem(FName ItemName, int Amount)
 {
     if (!HasItem(ItemName, Amount))
     {
@@ -224,8 +310,8 @@ bool APaperChar::RemoveItem(FName ItemName, int32 Amount)
     }
 
     // Remove from weapon inventory
-    int32 RemovedCount = 0;
-    for (int32 i = WeaponInventory.Num() - 1; i >= 0 && RemovedCount < Amount; --i)
+    int RemovedCount = 0;
+    for (int i = WeaponInventory.Num() - 1; i >= 0 && RemovedCount < Amount; --i)
     {
         if (WeaponInventory[i] == ItemName)
         {
@@ -274,11 +360,10 @@ bool APaperChar::CraftItem(FName ItemName)
     // Add crafted item to inventory
     AddItemToInventory(ItemName, 1);
 
-    UE_LOG(LogTemp, Log, TEXT("Successfully crafted: %s"), *ItemName.ToString());
     return true;
 }
 
-void APaperChar::EquipWeapon(int32 InventoryIndex)
+void APaperChar::EquipWeapon(int InventoryIndex)
 {
     if (!WeaponInventory.IsValidIndex(InventoryIndex))
     {
@@ -327,7 +412,6 @@ void APaperChar::EquipWeapon(int32 InventoryIndex)
         EquippedWeapon->SetActorRelativeLocation(WeaponRelativeLocation);
         EquippedWeapon->SetActorRelativeRotation(WeaponRelativeRotation);
 
-        UE_LOG(LogTemp, Log, TEXT("Equipped weapon: %s"), *WeaponName.ToString());
     }
 }
 
@@ -398,11 +482,32 @@ void APaperChar::Attack()
     EquippedWeapon->PerformAttack(this);
     LastAttackTime = CurrentTime;
 
+	bCanAttack = false;
+
     if (EquippedWeapon->AttackMontage)
     {
         PlayAnimMontage(EquippedWeapon->AttackMontage);
     }
 
-    // Restore previous actor rotation so the pawn's orientation isn't permanently changed by aiming.
-    SetActorRotation(OldRotation);
+    // reset flipbook
+	GetSprite()->SetFlipbook(nullptr);
+
+	// play flipbook based on facing direction
+   if (FacingDirection.Y > 0.f)
+    {
+        GetSprite()->SetFlipbook(AttackUpFlipbook);
+    }
+    else if (FacingDirection.Y < 0.f)
+    {
+        GetSprite()->SetFlipbook(AttackDownFlipbook);
+    }
+    else
+    {
+       GetSprite()->SetFlipbook(AttackSideFlipbook);
+       if (FacingDirection.X < 0.f)
+       {
+		   // flip sprite for left attack
+		   GetSprite()->SetRelativeScale3D(FVector(-1.f, 1.f, 1.f));
+       }
+   }
 }

@@ -102,7 +102,7 @@ TArray<FItemData> UItemDatabase::GetCraftableItems() const
     return Result;
 }
 
-bool UItemDatabase::CanCraftItem(FName ItemName, const TMap<FName, int32>& AvailableMaterials) const
+bool UItemDatabase::CanCraftItem(FName ItemName, const TMap<FName, int>& AvailableMaterials) const
 {
     FItemData ItemData;
     if (!GetItemData(ItemName, ItemData))

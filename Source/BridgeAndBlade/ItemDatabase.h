@@ -44,7 +44,7 @@ public:
 
     // Validate if crafting requirements can be met
     UFUNCTION(BlueprintCallable, Category = "Item Database")
-    bool CanCraftItem(FName ItemName, const TMap<FName, int32>& AvailableMaterials) const;
+    bool CanCraftItem(FName ItemName, const TMap<FName, int>& AvailableMaterials) const;
 
     // Get all item names
     UFUNCTION(BlueprintCallable, Category = "Item Database")
