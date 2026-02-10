@@ -38,7 +38,7 @@ void UCraftingItemWidget::SetItemData(const FItemData& Data, APaperChar* Charact
     if (RequirementsText)
     {
         FString ReqText = "Requires: ";
-        for (int32 i = 0; i < Data.CraftingRequirements.Num(); ++i)
+        for (int i = 0; i < Data.CraftingRequirements.Num(); ++i)
         {
             const FCraftingRequirement& Req = Data.CraftingRequirements[i];
             ReqText += FString::Printf(TEXT("%s x%d"), *Req.ItemName.ToString(), Req.Amount);

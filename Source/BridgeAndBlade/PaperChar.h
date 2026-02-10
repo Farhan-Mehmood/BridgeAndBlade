@@ -85,27 +85,27 @@ public:
     TArray<FName> WeaponInventory;
 
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Inventory")
-    TMap<FName, int32> MaterialInventory;
+    TMap<FName, int> MaterialInventory;
 
 
     // Inventory functions
     UFUNCTION(BlueprintCallable, Category = "Inventory")
-    void AddItemToInventory(FName ItemName, int32 Amount = 1);
+    void AddItemToInventory(FName ItemName, int Amount = 1);
 
     UFUNCTION(BlueprintCallable, Category = "Inventory")
-    void EquipWeapon(int32 InventoryIndex);
+    void EquipWeapon(int InventoryIndex);
 
     UFUNCTION(BlueprintCallable, Category = "Inventory")
     void UnequipWeapon();
 
     UFUNCTION(BlueprintCallable, Category = "Inventory")
-    int32 GetItemCount(FName ItemName) const;
+    int GetItemCount(FName ItemName) const;
 
     UFUNCTION(BlueprintCallable, Category = "Inventory")
-    bool HasItem(FName ItemName, int32 Amount = 1) const;
+    bool HasItem(FName ItemName, int Amount = 1) const;
 
     UFUNCTION(BlueprintCallable, Category = "Inventory")
-    bool RemoveItem(FName ItemName, int32 Amount = 1);
+    bool RemoveItem(FName ItemName, int Amount = 1);
 
     // Crafting
     UFUNCTION(BlueprintCallable, Category = "Crafting")

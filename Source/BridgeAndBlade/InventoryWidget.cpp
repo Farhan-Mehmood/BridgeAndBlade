@@ -13,10 +13,6 @@ void UInventoryWidget::NativeConstruct()
 {
     Super::NativeConstruct();
 
-    UE_LOG(LogTemp, Warning, TEXT("InventoryWidget NativeConstruct called"));
-    UE_LOG(LogTemp, Warning, TEXT("ItemWidgetClass is %s"), ItemWidgetClass ? TEXT("Valid") : TEXT("NULL"));
-    UE_LOG(LogTemp, Warning, TEXT("CraftingWidgetClass is %s"), CraftingWidgetClass ? TEXT("Valid") : TEXT("NULL"));
-
     if (CloseButton)
     {
         CloseButton->OnClicked.AddDynamic(this, &UInventoryWidget::OnCloseButtonClicked);

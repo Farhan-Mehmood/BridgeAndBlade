@@ -8,13 +8,10 @@
 #include "EnhancedInputSubsystems.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
-<<<<<<< Updated upstream
-=======
 #include "Engine/EngineTypes.h"
 #include "Blueprint/UserWidget.h"
 #include "InventoryWidget.h"
-#include "PaperCharPlayerController.h"
->>>>>>> Stashed changes
+//#include "PaperCharPlayerController.h"
 
 APaperChar::APaperChar()
 {
@@ -105,7 +102,7 @@ void APaperChar::MoveRight(const FInputActionValue& Value)
 void APaperChar::ZoomCamera(const FInputActionValue& Value)
 {
     const float AxisValue = Value.Get<float>();
-    const float ZoomSpeed = 200.0f;
+    const float ZoomSpeed = 50.0f;
 
     if (Camera && FMath::Abs(AxisValue) > KINDA_SMALL_NUMBER)
     {
@@ -164,8 +161,6 @@ void APaperChar::ToggleInventory()
                 PC->bShowMouseCursor = true;
 
                 bIsInventoryOpen = true;
-
-                UE_LOG(LogTemp, Log, TEXT("Inventory opened successfully"));
             }
             else
             {
@@ -200,7 +195,7 @@ void APaperChar::UpdateWeaponRotation()
     EquippedWeapon->SetActorRelativeRotation(NewRotation);
 }
 
-void APaperChar::AddItemToInventory(FName ItemName, int32 Amount)
+void APaperChar::AddItemToInventory(FName ItemName, int Amount)
 {
     UItemDatabase* DB = UItemDatabase::Get(this);
     FItemData ItemData;
@@ -228,17 +223,14 @@ void APaperChar::AddItemToInventory(FName ItemName, int32 Amount)
         {
             MaterialInventory.Add(ItemName, FMath::Min(Amount, ItemData.MaxStackSize));
         }
-        UE_LOG(LogTemp, Log, TEXT("Added %d %s (Total: %d)"),
-            Amount, *ItemName.ToString(), MaterialInventory[ItemName]);
         break;
 
     case EItemType::Weapon:
         // Weapons go into weapon inventory
-        for (int32 i = 0; i < Amount; ++i)
+        for (int i = 0; i < Amount; ++i)
         {
             WeaponInventory.Add(ItemName);
         }
-        UE_LOG(LogTemp, Log, TEXT("Added weapon: %s"), *ItemName.ToString());
         break;
 
     case EItemType::Placeable:
@@ -256,7 +248,7 @@ void APaperChar::AddItemToInventory(FName ItemName, int32 Amount)
     }
 }
 
-int32 APaperChar::GetItemCount(FName ItemName) const
+int APaperChar::GetItemCount(FName ItemName) const
 {
     if (MaterialInventory.Contains(ItemName))
     {
@@ -264,7 +256,7 @@ int32 APaperChar::GetItemCount(FName ItemName) const
     }
 
     // Count weapons
-    int32 WeaponCount = 0;
+    int WeaponCount = 0;
     for (const FName& WeaponName : WeaponInventory)
     {
         if (WeaponName == ItemName)
@@ -276,12 +268,12 @@ int32 APaperChar::GetItemCount(FName ItemName) const
     return WeaponCount;
 }
 
-bool APaperChar::HasItem(FName ItemName, int32 Amount) const
+bool APaperChar::HasItem(FName ItemName, int Amount) const
 {
     return GetItemCount(ItemName) >= Amount;
 }
 
-bool APaperChar::RemoveItem(FName ItemName, int32 Amount)
+bool APaperChar::RemoveItem(FName ItemName, int Amount)
 {
     if (!HasItem(ItemName, Amount))
     {
@@ -299,8 +291,8 @@ bool APaperChar::RemoveItem(FName ItemName, int32 Amount)
     }
 
     // Remove from weapon inventory
-    int32 RemovedCount = 0;
-    for (int32 i = WeaponInventory.Num() - 1; i >= 0 && RemovedCount < Amount; --i)
+    int RemovedCount = 0;
+    for (int i = WeaponInventory.Num() - 1; i >= 0 && RemovedCount < Amount; --i)
     {
         if (WeaponInventory[i] == ItemName)
         {
@@ -349,11 +341,10 @@ bool APaperChar::CraftItem(FName ItemName)
     // Add crafted item to inventory
     AddItemToInventory(ItemName, 1);
 
-    UE_LOG(LogTemp, Log, TEXT("Successfully crafted: %s"), *ItemName.ToString());
     return true;
 }
 
-void APaperChar::EquipWeapon(int32 InventoryIndex)
+void APaperChar::EquipWeapon(int InventoryIndex)
 {
     if (!WeaponInventory.IsValidIndex(InventoryIndex))
     {
@@ -402,7 +393,6 @@ void APaperChar::EquipWeapon(int32 InventoryIndex)
         EquippedWeapon->SetActorRelativeLocation(WeaponRelativeLocation);
         EquippedWeapon->SetActorRelativeRotation(WeaponRelativeRotation);
 
-        UE_LOG(LogTemp, Log, TEXT("Equipped weapon: %s"), *WeaponName.ToString());
     }
 }
 

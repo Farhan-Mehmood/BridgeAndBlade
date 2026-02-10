@@ -21,7 +21,7 @@ public:
     virtual void NativeConstruct() override;
 
     UFUNCTION(BlueprintCallable, Category = "Inventory")
-    void SetItemData(const FItemData& Data, int32 Quantity, APaperChar* Character);
+    void SetItemData(const FItemData& Data, int Quantity, APaperChar* Character);
 
 protected:
     UPROPERTY(meta = (BindWidget))
@@ -36,14 +36,20 @@ protected:
     UPROPERTY(meta = (BindWidget))
     UButton* EquipButton;
 
+    UPROPERTY(meta = (BindWidget))
+	UButton* DeleteButton;
+
     UPROPERTY()
     FItemData ItemData;
 
     UPROPERTY()
     APaperChar* OwningCharacter;
 
-    int32 ItemQuantity;
+    int ItemQuantity;
 
     UFUNCTION()
     void OnEquipButtonClicked();
+
+    UFUNCTION()
+    void OnDeleteButtonClicked();
 };
