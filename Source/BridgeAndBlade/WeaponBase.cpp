@@ -138,7 +138,7 @@ void AWeaponBase::SwingAttack(AActor* Attacker)
     for (int Angle = -45; Angle <= 45; Angle += 15)
     {
         FRotator SweepRot = BaseRotation;
-        SweepRot.Yaw += Angle;
+        SweepRot.Roll += Angle;
 
         // Get forward vector for this rotated yaw
         FVector SweepDirection = SweepRot.Vector();

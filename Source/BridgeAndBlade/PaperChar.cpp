@@ -71,6 +71,18 @@ void APaperChar::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
     UpdateWeaponRotation();
+
+	FacingDirection = FVector2D(GetVelocity().GetSafeNormal2D());
+
+	// Handle attack cooldown
+    if (!bCanAttack)
+    {
+        float CurrentTime = GetWorld()->GetTimeSeconds();
+        if (CurrentTime - LastAttackTime >= 1.0f) // 1 second cooldown
+        {
+            bCanAttack = true;
+        }
+	}
 }
 
 void APaperChar::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -89,14 +101,20 @@ void APaperChar::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
 
 void APaperChar::MoveUp(const FInputActionValue& Value)
 {
-    float InputValue = Value.Get<float>();
-    AddMovementInput(GetActorForwardVector() * InputValue);
+    if (bCanAttack)
+    {
+        float InputValue = Value.Get<float>();
+        AddMovementInput(GetActorForwardVector() * InputValue);
+    }
 }
 
 void APaperChar::MoveRight(const FInputActionValue& Value)
 {
-    float InputValue = Value.Get<float>();
-    AddMovementInput(GetActorRightVector() * InputValue);
+    if (bCanAttack)
+    {
+        float InputValue = Value.Get<float>();
+        AddMovementInput(GetActorRightVector() * InputValue);
+    }
 }
 
 void APaperChar::ZoomCamera(const FInputActionValue& Value)
@@ -421,8 +439,32 @@ void APaperChar::Attack()
     EquippedWeapon->PerformAttack(this);
     LastAttackTime = CurrentTime;
 
+	bCanAttack = false;
+
     if (EquippedWeapon->AttackMontage)
     {
         PlayAnimMontage(EquippedWeapon->AttackMontage);
     }
+
+    // reset flipbook
+	GetSprite()->SetFlipbook(nullptr);
+
+	// play flipbook based on facing direction
+   if (FacingDirection.Y > 0.f)
+    {
+        GetSprite()->SetFlipbook(AttackUpFlipbook);
+    }
+    else if (FacingDirection.Y < 0.f)
+    {
+        GetSprite()->SetFlipbook(AttackDownFlipbook);
+    }
+    else
+    {
+       GetSprite()->SetFlipbook(AttackSideFlipbook);
+       if (FacingDirection.X < 0.f)
+       {
+		   // flip sprite for left attack
+		   GetSprite()->SetRelativeScale3D(FVector(-1.f, 1.f, 1.f));
+       }
+   }
 }
