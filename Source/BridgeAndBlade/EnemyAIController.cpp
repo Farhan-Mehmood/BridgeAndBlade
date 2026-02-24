@@ -176,7 +176,7 @@ void AEnemyAIController::HandleChasing(float DeltaSeconds)
     {
         UE_LOG(LogTemp, Warning, TEXT("Enemy %s: Player lost, returning"), *ControlledPawn->GetName());
         StopMovement();
-        SetState(EEnemyState::Returning);
+        SetState(EEnemyState::Patrolling);
         return;
     }
 
@@ -185,7 +185,7 @@ void AEnemyAIController::HandleChasing(float DeltaSeconds)
     {
         UE_LOG(LogTemp, Warning, TEXT("Enemy %s: Player left patrol zone, returning"), *ControlledPawn->GetName());
         StopMovement();
-        SetState(EEnemyState::Returning);
+        SetState(EEnemyState::Patrolling);
         return;
     }
 
@@ -194,7 +194,7 @@ void AEnemyAIController::HandleChasing(float DeltaSeconds)
     {
         UE_LOG(LogTemp, Warning, TEXT("Enemy %s: Lost sight of player, returning"), *ControlledPawn->GetName());
         StopMovement();
-        SetState(EEnemyState::Returning);
+        SetState(EEnemyState::Patrolling);
         return;
     }
 
