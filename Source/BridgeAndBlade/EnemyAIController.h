@@ -28,7 +28,6 @@ public:
     virtual void Tick(float DeltaSeconds) override;
     virtual void OnPossess(APawn* InPawn) override;
 
-    // Optional: keep a BehaviorTree property if you want to run a BT per-pawn later.
     UPROPERTY(EditAnywhere, Category = "AI")
     UBehaviorTree* BehaviorTree;
 
@@ -46,19 +45,11 @@ public:
     bool bRequireLineOfSight = true;
 
 private:
-    // Spawn location (center of patrol zone)
     FVector SpawnLocation;
-
-    // Current AI state
     EEnemyState CurrentState;
-
-    // Patrol point timer
     float PatrolTimer;
-
-    // Current patrol target location
     FVector CurrentPatrolPoint;
 
-    // Functions
     void HandlePatrolling(float DeltaSeconds);
     void HandleChasing(float DeltaSeconds);
     void HandleAttacking(float DeltaSeconds);
@@ -68,4 +59,17 @@ private:
     bool IsPlayerInPatrolZone(const APawn* PlayerPawn) const;
     bool CanSeePlayer(const APawn* PlayerPawn) const;
     void SetState(EEnemyState NewState);
+
+    // Collision handling to avoid getting stuck
+    UFUNCTION()
+    void OnEnemyHit(AActor* SelfActor, AActor* OtherActor, FVector NormalImpulse, const FHitResult& Hit);
+
+    bool CheckForObstaclesAhead(float LookAheadDistance = 150.0f) const;
+
+    FVector LastKnownPlayerLocation;
+    float ChaseTimeOutsideZone;
+    float MaxChaseTimeOutsideZone;
+
+    float TimeSearchingLastKnown;
+    float MaxSearchTime;
 };
