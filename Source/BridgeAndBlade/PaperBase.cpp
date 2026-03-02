@@ -1,9 +1,13 @@
+// PaperBase.cpp
 #include "PaperBase.h"
+#include "PaperChar.h"
+#include "Kismet/GameplayStatics.h"
 
 APaperBase::APaperBase()
 {
     PrimaryActorTick.bCanEverTick = true;
-    bHasMoved = false; // Initialize to false
+    bHasMoved = false;
+    health = 100; // Default health
 }
 
 void APaperBase::BeginPlay()
@@ -27,7 +31,7 @@ void APaperBase::UpdateAnimation()
     if (Speed > 5.f)
     {
         bHasMoved = true;
-
+        
         // Determine which direction is dominant
         if (FMath::Abs(MoveY) > FMath::Abs(MoveX))
         {
@@ -60,24 +64,60 @@ void APaperBase::UpdateAnimation()
             }
         }
     }
-    // Optional: Handle idle state if you want
-    // else if (!bHasMoved)
-    // {
-    //     GetSprite()->SetFlipbook(IdleFlipbook);
-    // }
 }
 
-void APaperBase::TakeAHit(int damageAmount)
+void APaperBase::TakeAHit(int32 damageAmount)
 {
     health -= damageAmount;
-
+    
+    UE_LOG(LogTemp, Warning, TEXT("%s took %d damage. Health: %d"), *GetName(), damageAmount, health);
+    
     if (health <= 0)
     {
-        die(itemDrops);
+        die(itemDrops, itemDropAmounts);
     }
 }
 
-void APaperBase::die(TArray<FString> drops)
+void APaperBase::die(TArray<FName> drops, TArray<int32> amounts)
 {
+    UE_LOG(LogTemp, Warning, TEXT("%s died"), *GetName());
+
+    // Failsafe: if drops array is empty, just destroy
+    if (drops.Num() == 0)
+    {
+        UE_LOG(LogTemp, Log, TEXT("%s has no drops"), *GetName());
+        Destroy();
+        return;
+    }
+
+    // Find the player character
+    APaperChar* PlayerChar = Cast<APaperChar>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
+    
+    if (PlayerChar)
+    {
+        // Add each item to player inventory
+        for (int32 i = 0; i < drops.Num(); ++i)
+        {
+            FName ItemName = drops[i];
+            int32 Amount = 1; // Default amount
+            
+            // If amounts array has a corresponding entry, use it
+            if (amounts.IsValidIndex(i))
+            {
+                Amount = amounts[i];
+            }
+            
+            // Add item to player inventory
+            PlayerChar->AddItemToInventory(ItemName, Amount);
+            
+            UE_LOG(LogTemp, Log, TEXT("%s dropped: %s x%d"), *GetName(), *ItemName.ToString(), Amount);
+        }
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Could not find player to give drops to"));
+    }
+
+    // Destroy the actor
     Destroy();
 }

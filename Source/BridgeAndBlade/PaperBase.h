@@ -61,18 +61,24 @@ public:
 
 	bool bHasMoved = false;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats")
 	int health = 10;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats")
 	int moveSpeed = 0;
 
 	void UpdateAnimation();
 	bool bIsMoving = false;
 
-	UPROPERTY(EditAnywhere)
-	TArray<FString> itemDrops;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Loot")
+	TArray<FName> itemDrops;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Loot")
+	TArray<int32> itemDropAmounts;
+
+	UFUNCTION(BlueprintCallable, Category = "Combat")
 	void TakeAHit(int damageAmount);
-	void die(TArray<FString> drops);
+
+	UFUNCTION(BlueprintCallable, Category = "Combat")
+	void die(TArray<FName> drops, TArray<int32> amounts);
 };

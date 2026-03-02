@@ -41,16 +41,16 @@ void AEnemyAIController::OnPossess(APawn* InPawn)
             if (NavSys->ProjectPointToNavigation(SpawnLocation, NavLoc, FVector(500, 500, 500)))
             {
                 SpawnLocation = NavLoc.Location;
-                UE_LOG(LogTemp, Warning, TEXT("Enemy %s spawn location projected to NavMesh: %s"), 
-                    *InPawn->GetName(), *SpawnLocation.ToString());
+                //UE_LOG(LogTemp, Warning, TEXT("Enemy %s spawn location projected to NavMesh: %s"), 
+                    //*InPawn->GetName(), *SpawnLocation.ToString());
             }
         }
         
         CurrentPatrolPoint = GetRandomPatrolPoint();
         SetState(EEnemyState::Patrolling);
         
-        UE_LOG(LogTemp, Warning, TEXT("Enemy %s spawned at %s, patrol radius: %f"), 
-            *InPawn->GetName(), *SpawnLocation.ToString(), PatrolRadius);
+        //UE_LOG(LogTemp, Warning, TEXT("Enemy %s spawned at %s, patrol radius: %f"), 
+            //*InPawn->GetName(), *SpawnLocation.ToString(), PatrolRadius);
         
         // Set up collision detection to avoid getting stuck
         if (ACharacter* EnemyCharacter = Cast<ACharacter>(InPawn))
@@ -83,8 +83,8 @@ void AEnemyAIController::OnEnemyHit(AActor* SelfActor, AActor* OtherActor, FVect
         return;
     }
 
-    UE_LOG(LogTemp, Log, TEXT("Enemy %s hit %s, picking new patrol direction"), 
-        *ControlledPawn->GetName(), *OtherActor->GetName());
+    //UE_LOG(LogTemp, Log, TEXT("Enemy %s hit %s, picking new patrol direction"), 
+       // *ControlledPawn->GetName(), *OtherActor->GetName());
 
     // Get current facing direction
     FVector CurrentForward = ControlledPawn->GetActorForwardVector();
@@ -144,8 +144,8 @@ void AEnemyAIController::OnEnemyHit(AActor* SelfActor, AActor* OtherActor, FVect
     StopMovement();
     MoveToLocation(CurrentPatrolPoint, 50.0f);
 
-    UE_LOG(LogTemp, Log, TEXT("Enemy %s new patrol point: %s"), 
-        *ControlledPawn->GetName(), *CurrentPatrolPoint.ToString());
+    //UE_LOG(LogTemp, Log, TEXT("Enemy %s new patrol point: %s"), 
+    //    *ControlledPawn->GetName(), *CurrentPatrolPoint.ToString());
 }
 
 void AEnemyAIController::Tick(float DeltaSeconds)
@@ -201,7 +201,7 @@ void AEnemyAIController::HandlePatrolling(float DeltaSeconds)
     // Check if player is in patrol zone and visible EVERY tick
     if (PlayerPawn && IsPlayerInPatrolZone(PlayerPawn) && CanSeePlayer(PlayerPawn))
     {
-        UE_LOG(LogTemp, Warning, TEXT("Enemy %s spotted player! Switching to Chase"), *ControlledPawn->GetName());
+        //UE_LOG(LogTemp, Warning, TEXT("Enemy %s spotted player! Switching to Chase"), *ControlledPawn->GetName());
         StopMovement();
         SetState(EEnemyState::Chasing);
         return;
@@ -222,8 +222,8 @@ void AEnemyAIController::HandlePatrolling(float DeltaSeconds)
             CurrentPatrolPoint = GetRandomPatrolPoint();
             PatrolTimer = 0.0f;
             
-            UE_LOG(LogTemp, Log, TEXT("Enemy %s picked new patrol point at %s"), 
-                *ControlledPawn->GetName(), *CurrentPatrolPoint.ToString());
+            //UE_LOG(LogTemp, Log, TEXT("Enemy %s picked new patrol point at %s"), 
+             //   *ControlledPawn->GetName(), *CurrentPatrolPoint.ToString());
             
             MoveToLocation(CurrentPatrolPoint, 50.0f);
         }
@@ -238,8 +238,8 @@ void AEnemyAIController::HandlePatrolling(float DeltaSeconds)
         EPathFollowingStatus::Type MoveStatus = GetMoveStatus();
         if (MoveStatus != EPathFollowingStatus::Moving)
         {
-            UE_LOG(LogTemp, Warning, TEXT("Enemy %s attempting to move to patrol point. Distance: %f, MoveStatus: %d"), 
-                *ControlledPawn->GetName(), DistanceToPatrolPoint, (int32)MoveStatus);
+            //UE_LOG(LogTemp, Warning, TEXT("Enemy %s attempting to move to patrol point. Distance: %f, MoveStatus: %d"), 
+            //    *ControlledPawn->GetName(), DistanceToPatrolPoint, (int32)MoveStatus);
             
             FAIMoveRequest MoveRequest(CurrentPatrolPoint);
             MoveRequest.SetAcceptanceRadius(50.0f);
@@ -249,12 +249,12 @@ void AEnemyAIController::HandlePatrolling(float DeltaSeconds)
             // Check if path was found
             if (!NavPath.IsValid() || NavPath->IsPartial())
             {
-                UE_LOG(LogTemp, Error, TEXT("Enemy %s: No valid path to patrol point!"), *ControlledPawn->GetName());
-                UE_LOG(LogTemp, Error, TEXT("  Current Location: %s"), *CurrentLocation.ToString());
-                UE_LOG(LogTemp, Error, TEXT("  Target Location: %s"), *CurrentPatrolPoint.ToString());
+                //UE_LOG(LogTemp, Error, TEXT("Enemy %s: No valid path to patrol point!"), *ControlledPawn->GetName());
+                //UE_LOG(LogTemp, Error, TEXT("  Current Location: %s"), *CurrentLocation.ToString());
+                //UE_LOG(LogTemp, Error, TEXT("  Target Location: %s"), *CurrentPatrolPoint.ToString());
                 
                 // Pick a new patrol point immediately
-                UE_LOG(LogTemp, Warning, TEXT("  Generating new patrol point..."));
+                //UE_LOG(LogTemp, Warning, TEXT("  Generating new patrol point..."));
                 CurrentPatrolPoint = GetRandomPatrolPoint();
                 PatrolTimer = PatrolWaitTime;
             }
@@ -264,7 +264,7 @@ void AEnemyAIController::HandlePatrolling(float DeltaSeconds)
     // Check for obstacles ahead and turn if needed
     if (CheckForObstaclesAhead())
     {
-        UE_LOG(LogTemp, Log, TEXT("Enemy %s detected obstacle ahead, changing direction"), *ControlledPawn->GetName());
+        //UE_LOG(LogTemp, Log, TEXT("Enemy %s detected obstacle ahead, changing direction"), *ControlledPawn->GetName());
         
         // Pick a new direction away from obstacle
         FVector CurrentForward = ControlledPawn->GetActorForwardVector();
@@ -290,7 +290,7 @@ void AEnemyAIController::HandleChasing(float DeltaSeconds)
     APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
     if (!PlayerPawn)
     {
-        UE_LOG(LogTemp, Warning, TEXT("Enemy %s: Player lost, returning"), *ControlledPawn->GetName());
+        //UE_LOG(LogTemp, Warning, TEXT("Enemy %s: Player lost, returning"), *ControlledPawn->GetName());
         StopMovement();
         SetState(EEnemyState::Patrolling);
         ChaseTimeOutsideZone = 0.0f;
@@ -314,7 +314,7 @@ void AEnemyAIController::HandleChasing(float DeltaSeconds)
         
         if (ChaseTimeOutsideZone >= MaxChaseTimeOutsideZone)
         {
-            UE_LOG(LogTemp, Warning, TEXT("Enemy %s: Player left patrol zone too long, returning"), *ControlledPawn->GetName());
+            //UE_LOG(LogTemp, Warning, TEXT("Enemy %s: Player left patrol zone too long, returning"), *ControlledPawn->GetName());
             StopMovement();
             SetState(EEnemyState::Patrolling);
             ChaseTimeOutsideZone = 0.0f;
@@ -330,7 +330,7 @@ void AEnemyAIController::HandleChasing(float DeltaSeconds)
         // Give up if we've been searching too long
         if (TimeSearchingLastKnown >= MaxSearchTime)
         {
-            UE_LOG(LogTemp, Warning, TEXT("Enemy %s: Searched too long, giving up"), *ControlledPawn->GetName());
+            //UE_LOG(LogTemp, Warning, TEXT("Enemy %s: Searched too long, giving up"), *ControlledPawn->GetName());
             StopMovement();
             SetState(EEnemyState::Patrolling);
             TimeSearchingLastKnown = 0.0f;
@@ -353,7 +353,7 @@ void AEnemyAIController::HandleChasing(float DeltaSeconds)
                 
                 if (!NavPath.IsValid() || NavPath->IsPartial())
                 {
-                    UE_LOG(LogTemp, Warning, TEXT("Enemy %s: Can't reach last known location, returning to patrol"), *ControlledPawn->GetName());
+                    //UE_LOG(LogTemp, Warning, TEXT("Enemy %s: Can't reach last known location, returning to patrol"), *ControlledPawn->GetName());
                     StopMovement();
                     SetState(EEnemyState::Patrolling);
                     TimeSearchingLastKnown = 0.0f;
@@ -362,13 +362,13 @@ void AEnemyAIController::HandleChasing(float DeltaSeconds)
                 }
             }
             
-            UE_LOG(LogTemp, Log, TEXT("Enemy %s: Lost sight, moving to last known location"), *ControlledPawn->GetName());
+            //UE_LOG(LogTemp, Log, TEXT("Enemy %s: Lost sight, moving to last known location"), *ControlledPawn->GetName());
             return;
         }
         else
         {
             // Reached last known location but still can't see player
-            UE_LOG(LogTemp, Warning, TEXT("Enemy %s: Reached last known location, player not found, returning"), *ControlledPawn->GetName());
+            //UE_LOG(LogTemp, Warning, TEXT("Enemy %s: Reached last known location, player not found, returning"), *ControlledPawn->GetName());
             StopMovement();
             SetState(EEnemyState::Patrolling);
             TimeSearchingLastKnown = 0.0f;
@@ -419,7 +419,7 @@ void AEnemyAIController::HandleAttacking(float DeltaSeconds)
     // If player left the patrol zone, return to patrol
     if (!IsPlayerInPatrolZone(PlayerPawn))
     {
-        UE_LOG(LogTemp, Warning, TEXT("Enemy %s: Player left patrol zone during attack, returning"), *ControlledPawn->GetName());
+        //UE_LOG(LogTemp, Warning, TEXT("Enemy %s: Player left patrol zone during attack, returning"), *ControlledPawn->GetName());
         StopMovement();
         SetState(EEnemyState::Patrolling);
         return;
@@ -459,7 +459,7 @@ void AEnemyAIController::HandleReturning(float DeltaSeconds)
     // Check if player re-entered patrol zone while returning
     if (PlayerPawn && IsPlayerInPatrolZone(PlayerPawn) && CanSeePlayer(PlayerPawn))
     {
-        UE_LOG(LogTemp, Warning, TEXT("Enemy %s: Player re-entered patrol zone, chasing again"), *ControlledPawn->GetName());
+        //UE_LOG(LogTemp, Warning, TEXT("Enemy %s: Player re-entered patrol zone, chasing again"), *ControlledPawn->GetName());
         StopMovement();
         SetState(EEnemyState::Chasing);
         return;
@@ -469,21 +469,21 @@ void AEnemyAIController::HandleReturning(float DeltaSeconds)
     const FVector CurrentLocation = ControlledPawn->GetActorLocation();
     const float DistanceToSpawn = FVector::Dist2D(CurrentLocation, SpawnLocation);
 
-    UE_LOG(LogTemp, Verbose, TEXT("Enemy %s returning to spawn. Distance: %f"), *ControlledPawn->GetName(), DistanceToSpawn);
+    //UE_LOG(LogTemp, Verbose, TEXT("Enemy %s returning to spawn. Distance: %f"), *ControlledPawn->GetName(), DistanceToSpawn);
 
     if (DistanceToSpawn < 100.0f) // Reached spawn area
     {
         // Resume patrolling with a new random point
         CurrentPatrolPoint = GetRandomPatrolPoint();
         PatrolTimer = 0.0f;
-        UE_LOG(LogTemp, Log, TEXT("Enemy %s: Reached spawn, resuming patrol"), *ControlledPawn->GetName());
+        //UE_LOG(LogTemp, Log, TEXT("Enemy %s: Reached spawn, resuming patrol"), *ControlledPawn->GetName());
         SetState(EEnemyState::Patrolling);
         MoveToLocation(CurrentPatrolPoint, 50.0f);
     }
     else
     {
         // Always move to spawn location every tick while returning
-        UE_LOG(LogTemp, Verbose, TEXT("Enemy %s moving to spawn at %s"), *ControlledPawn->GetName(), *SpawnLocation.ToString());
+        //UE_LOG(LogTemp, Verbose, TEXT("Enemy %s moving to spawn at %s"), *ControlledPawn->GetName(), *SpawnLocation.ToString());
         MoveToLocation(SpawnLocation, 100.0f);
     }
 }
@@ -513,12 +513,12 @@ FVector AEnemyAIController::GetRandomPatrolPoint() const
             ProjectedLocation.Location.Z = SpawnLocation.Z;
             PatrolPoint = ProjectedLocation.Location;
             
-            UE_LOG(LogTemp, Verbose, TEXT("Generated valid patrol point at %s (angle: %.2f, dist: %.2f)"), 
-                *PatrolPoint.ToString(), RandomAngle, RandomDistance);
+            //UE_LOG(LogTemp, Verbose, TEXT("Generated valid patrol point at %s (angle: %.2f, dist: %.2f)"), 
+            //    *PatrolPoint.ToString(), RandomAngle, RandomDistance);
         }
         else
         {
-            UE_LOG(LogTemp, Warning, TEXT("Could not project patrol point, using spawn Z anyway"));
+            //UE_LOG(LogTemp, Warning, TEXT("Could not project patrol point, using spawn Z anyway"));
         }
     }
 
@@ -625,8 +625,8 @@ void AEnemyAIController::SetState(EEnemyState NewState)
 {
     if (CurrentState != NewState)
     {
-        UE_LOG(LogTemp, Warning, TEXT("Enemy %s changing state: %d -> %d"), 
-            *GetPawn()->GetName(), (int32)CurrentState, (int32)NewState);
+        //UE_LOG(LogTemp, Warning, TEXT("Enemy %s changing state: %d -> %d"), 
+        //    *GetPawn()->GetName(), (int32)CurrentState, (int32)NewState);
         
         CurrentState = NewState;
 
