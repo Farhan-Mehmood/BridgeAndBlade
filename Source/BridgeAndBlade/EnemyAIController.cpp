@@ -169,8 +169,8 @@ void AEnemyAIController::Tick(float DeltaSeconds)
     // Debug: Draw patrol radius
     if (GetWorld())
     {
-        DrawDebugCircle(GetWorld(), SpawnLocation, PatrolRadius, 32, FColor::Green, false, -1.0f, 0, 2.0f, FVector(0, 0, 1), FVector(0, 1, 0));
-        DrawDebugSphere(GetWorld(), CurrentPatrolPoint, 30.0f, 8, FColor::Yellow, false, -1.0f, 0, 2.0f);
+        //DrawDebugCircle(GetWorld(), SpawnLocation, PatrolRadius, 32, FColor::Green, false, -1.0f, 0, 2.0f, FVector(0, 0, 1), FVector(0, 1, 0));
+       // DrawDebugSphere(GetWorld(), CurrentPatrolPoint, 30.0f, 8, FColor::Yellow, false, -1.0f, 0, 2.0f);
     }
 
     // Handle state machine
@@ -536,7 +536,7 @@ bool AEnemyAIController::IsPlayerInPatrolZone(const APawn* PlayerPawn) const
     if (GetWorld())
     {
         FColor DebugColor = bInZone ? FColor::Green : FColor::Red;
-        DrawDebugLine(GetWorld(), SpawnLocation, PlayerPawn->GetActorLocation(), DebugColor, false, 0.1f, 0, 2.0f);
+        //DrawDebugLine(GetWorld(), SpawnLocation, PlayerPawn->GetActorLocation(), DebugColor, false, 0.1f, 0, 2.0f);
     }
     
     return bInZone;
@@ -576,12 +576,12 @@ bool AEnemyAIController::CanSeePlayer(const APawn* PlayerPawn) const
         // Debug visualization
         if (bHit)
         {
-            DrawDebugLine(GetWorld(), MyLocation, PlayerLocation, FColor::Red, false, 0.1f, 0, 2.0f);
-            DrawDebugPoint(GetWorld(), HitResult.Location, 10.0f, FColor::Orange, false, 0.1f);
+           // DrawDebugLine(GetWorld(), MyLocation, PlayerLocation, FColor::Red, false, 0.1f, 0, 2.0f);
+           // DrawDebugPoint(GetWorld(), HitResult.Location, 10.0f, FColor::Orange, false, 0.1f);
         }
         else
         {
-            DrawDebugLine(GetWorld(), MyLocation, PlayerLocation, FColor::Cyan, false, 0.1f, 0, 2.0f);
+           // DrawDebugLine(GetWorld(), MyLocation, PlayerLocation, FColor::Cyan, false, 0.1f, 0, 2.0f);
         }
 
         // If trace hit something, we don't have line of sight

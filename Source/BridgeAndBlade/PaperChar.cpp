@@ -21,6 +21,7 @@ APaperChar::APaperChar()
     Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
     Camera->SetupAttachment(RootComponent);
     Camera->bUsePawnControlRotation = false;
+	cameraDistance = 1216.f;
 
     AutoPossessPlayer = EAutoReceiveInput::Player0;
 
@@ -60,7 +61,7 @@ void APaperChar::BeginPlay()
     }
 
     // Test crafting
-    AddItemToInventory(TEXT("Wood"), 10);
+    AddItemToInventory(TEXT("Wood"), 15);
     AddItemToInventory(TEXT("Stone"), 10);
 
     CraftItem(TEXT("WoodSword"));
@@ -123,7 +124,7 @@ void APaperChar::ZoomCamera(const FInputActionValue& Value)
     const float AxisValue = Value.Get<float>();
     const float ZoomSpeed = 50.0f;
 
-    if (Camera && FMath::Abs(AxisValue) > KINDA_SMALL_NUMBER)
+    if (Camera && FMath::Abs(AxisValue) > KINDA_SMALL_NUMBER && cameraDistance > 0 && cameraDistance < 10000)
     {
         Camera->AddLocalOffset(FVector(AxisValue * ZoomSpeed, 0.f, 0.f));
     }
@@ -152,7 +153,7 @@ void APaperChar::ToggleInventory()
         if (PC)
         {
             PC->SetInputMode(FInputModeGameOnly());
-            PC->bShowMouseCursor = false;
+           // PC->bShowMouseCursor = false;
         }
     }
     else
