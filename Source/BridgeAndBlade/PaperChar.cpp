@@ -61,12 +61,12 @@ void APaperChar::BeginPlay()
     }
 
     // Test crafting
-    AddItemToInventory(TEXT("Wood"), 15);
-    AddItemToInventory(TEXT("Stone"), 10);
+    AddItemToInventory(TEXT("Wood"), 5);
+    //AddItemToInventory(TEXT("Stone"), 10);
 
     CraftItem(TEXT("WoodSword"));
-	CraftItem(TEXT("StoneSword"));
-    EquipWeapon(1);
+	//CraftItem(TEXT("StoneSword"));
+    //EquipWeapon(1);
 }
 
 void APaperChar::Tick(float DeltaTime)

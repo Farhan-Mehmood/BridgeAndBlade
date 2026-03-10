@@ -189,6 +189,10 @@ void AEnemyAIController::Tick(float DeltaSeconds)
             HandleReturning(DeltaSeconds);
             break;
     }
+
+	// set rotation to face screen
+    FRotator DesiredRotation = FRotator(0, 0, 90);
+	ControlledPawn->SetActorRotation(DesiredRotation);
 }
 
 void AEnemyAIController::HandlePatrolling(float DeltaSeconds)

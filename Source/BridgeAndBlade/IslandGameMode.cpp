@@ -165,8 +165,7 @@ void AIslandGameMode::SpawnEnvironmentObjects()
             }
         }
 
-        // Random rotation for variety
-        FRotator SpawnRotation = FRotator(0, FMath::FRandRange(0.0f, 360.0f), 0);
+        FRotator SpawnRotation = FRotator(0, 0, 0);
 
         // Spawn it
         FActorSpawnParameters SpawnParams;
