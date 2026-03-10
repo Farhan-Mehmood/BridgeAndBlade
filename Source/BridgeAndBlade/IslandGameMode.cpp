@@ -6,6 +6,7 @@
 #include "EngineUtils.h"
 #include "Engine/TargetPoint.h"
 #include "NavigationSystem.h"
+#include "TimerManager.h"
 
 AIslandGameMode::AIslandGameMode()
 {
@@ -16,75 +17,123 @@ void AIslandGameMode::BeginPlay()
 {
     Super::BeginPlay();
 
-    // Give the level a moment to fully load before spawning
-    FTimerHandle SpawnTimer;
-    GetWorld()->GetTimerManager().SetTimer(SpawnTimer, [this]()
+    // Spawn environment objects once
+    SpawnEnvironmentObjects();
+
+    // Start the repeating spawn timer
+    if (SpawnIntervalSeconds > 0.0f && EnemyClasses.Num() > 0)
     {
-        SpawnEnemies();
-        SpawnEnvironmentObjects();
-    }, 0.5f, false);
+        GetWorld()->GetTimerManager().SetTimer(SpawnTimerHandle, this, &AIslandGameMode::TrySpawnTick, SpawnIntervalSeconds, true, 0.5f);
+    }
 }
 
-void AIslandGameMode::SpawnEnemies()
+void AIslandGameMode::TrySpawnTick()
 {
-    if (EnemyClasses.Num() == 0)
+    if (EnemyClasses.Num() == 0 || !GetWorld())
     {
-        UE_LOG(LogTemp, Warning, TEXT("IslandGameMode: No enemy classes configured for spawning"));
         return;
     }
 
-    // // Look for TargetPoint actors placed in the level to use as spawn markers
-    // TArray<AActor*> SpawnPoints;
-    // UGameplayStatics::GetAllActorsOfClass(GetWorld(), ATargetPoint::StaticClass(), SpawnPoints);
+    // Clean up any far or null enemies first
+    CleanupFarEnemies();
 
-    // if (SpawnPoints.Num() == 0)
-    // {
-    //     UE_LOG(LogTemp, Warning, TEXT("IslandGameMode: No spawn points found. Add TargetPoint actors to your level."));
-    //     return;
-    // }
-
-    UNavigationSystemV1* NavSys = UNavigationSystemV1::GetCurrent(GetWorld());
-    int32 TotalSpawned = 0;
-    // TotalEnemiesToSpawn is now set directly from the property
-
-    // Spawn enemies randomly across the defined bounds
-    for (int32 i = 0; i < TotalEnemiesToSpawn; ++i)
+    // Limit concurrent enemies
+    if (SpawnedEnemies.Num() >= MaxConcurrentEnemies)
     {
-        // Pick a random enemy type
-        TSubclassOf<APaperEnemy> EnemyClass = EnemyClasses[FMath::RandRange(0, EnemyClasses.Num() - 1)];
-
-        // Get a random location within enemy spawn bounds
-        FVector SpawnLocation = GetRandomLocationInBounds(EnemyBoundsMin, EnemyBoundsMax);
-
-        // Snap to navmesh so they can actually move
-        if (NavSys)
-        {
-            FNavLocation NavLocation;
-            if (NavSys->ProjectPointToNavigation(SpawnLocation, NavLocation, FVector(500, 500, 500)))
-            {
-                SpawnLocation = NavLocation.Location;
-            }
-            else
-            {
-                // Skip this spawn if we can't find navmesh
-                UE_LOG(LogTemp, Warning, TEXT("IslandGameMode: Couldn't project spawn location to navmesh, skipping"));
-                continue;
-            }
-        }
-
-        // Actually spawn the enemy
-        FActorSpawnParameters SpawnParams;
-        SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
-
-        APaperEnemy* SpawnedEnemy = GetWorld()->SpawnActor<APaperEnemy>(EnemyClass, SpawnLocation, FRotator::ZeroRotator, SpawnParams);
-        
-        if (SpawnedEnemy)
-        {
-            TotalSpawned++;
-        }
+        return;
     }
 
-    UE_LOG(LogTemp, Log, TEXT("IslandGameMode: Spawned %d enemies randomly across island"), TotalSpawned);
+    APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
+    if (!PlayerPawn)
+    {
+        return;
+    }
+
+    UNavigationSystemV1* NavSys = UNavigationSystemV1::GetCurrent(GetWorld());
+    FVector SpawnLocation = GetRandomPointAroundPlayer(SpawnMinRadius, SpawnMaxRadius);
+
+    // Project to navmesh so enemies can navigate
+    if (NavSys)
+    {
+        FNavLocation NavLocation;
+        if (!NavSys->ProjectPointToNavigation(SpawnLocation, NavLocation, FVector(500, 500, 500)))
+        {
+            // Skip spawn if no navmesh close to chosen point
+            return;
+        }
+        SpawnLocation = NavLocation.Location;
+    }
+
+    // Pick random enemy class
+    int32 Idx = FMath::RandRange(0, EnemyClasses.Num() - 1);
+    TSubclassOf<APaperEnemy> EnemyClass = EnemyClasses.IsValidIndex(Idx) ? EnemyClasses[Idx] : nullptr;
+    if (!EnemyClass) return;
+
+    FActorSpawnParameters SpawnParams;
+    SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+
+    APaperEnemy* SpawnedEnemy = GetWorld()->SpawnActor<APaperEnemy>(EnemyClass, SpawnLocation, FRotator::ZeroRotator, SpawnParams);
+    if (SpawnedEnemy)
+    {
+        SpawnedEnemies.Add(SpawnedEnemy);
+        UE_LOG(LogTemp, Log, TEXT("IslandGameMode: Spawned enemy %s at %s (active=%d)"), *SpawnedEnemy->GetName(), *SpawnLocation.ToString(), SpawnedEnemies.Num());
+    }
+}
+
+void AIslandGameMode::CleanupFarEnemies()
+{
+    if (!GetWorld()) return;
+
+    APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
+    if (!PlayerPawn)
+    {
+        return;
+    }
+
+    FVector PlayerLocation = PlayerPawn->GetActorLocation();
+
+    // Iterate backwards so we can remove safely
+    for (int32 i = SpawnedEnemies.Num() - 1; i >= 0; --i)
+    {
+        APaperEnemy* E = SpawnedEnemies[i];
+        // Use IsValid to check for null / pending kill
+        if (!IsValid(E))
+        {
+            SpawnedEnemies.RemoveAtSwap(i);
+            continue;
+        }
+
+        float DistSq = FVector::DistSquared(E->GetActorLocation(), PlayerLocation);
+        if (DistSq > (DespawnRadius * DespawnRadius))
+        {
+            UE_LOG(LogTemp, Log, TEXT("IslandGameMode: Despawning enemy %s (dist=%f)"), *E->GetName(), FMath::Sqrt(DistSq));
+            E->Destroy();
+            SpawnedEnemies.RemoveAtSwap(i);
+        }
+    }
+}
+
+FVector AIslandGameMode::GetRandomPointAroundPlayer(float MinRadius, float MaxRadius) const
+{
+    APawn* PlayerPawn = nullptr;
+    if (GetWorld())
+    {
+        PlayerPawn = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
+    }
+    if (!PlayerPawn)
+    {
+        // fallback to world origin
+        return FVector::ZeroVector;
+    }
+
+    const FVector Center = PlayerPawn->GetActorLocation();
+    const float Angle = FMath::FRandRange(0.0f, 2.0f * PI);
+    const float Radius = FMath::FRandRange(MinRadius, MaxRadius);
+    const float X = Center.X + FMath::Cos(Angle) * Radius;
+    const float Y = Center.Y + FMath::Sin(Angle) * Radius;
+    const float Z = Center.Z;
+
+    return FVector(X, Y, Z);
 }
 
 void AIslandGameMode::SpawnEnvironmentObjects()
