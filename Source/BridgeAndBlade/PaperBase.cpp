@@ -13,12 +13,44 @@ APaperBase::APaperBase()
 void APaperBase::BeginPlay()
 {
     Super::BeginPlay();
+
+	lastHP = health; // Initialize lastHP to current health at start
 }
 
 void APaperBase::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
     UpdateAnimation();
+
+    if (health != lastHP)
+    {
+        // Health has changed since last tick, so we know we took damage (or were healed)
+        int DamageTaken = lastHP - health;
+        FString DamageText = FString::Printf(TEXT("%d"), FMath::Abs(DamageTaken));
+
+        // Choose color based on damage or healing
+        const FColor TextColor = (DamageTaken > 0) ? FColor::Red : FColor::Green;
+
+        // Spawn the floating text at the enemy's location, slightly above it
+        FVector TextLocation = GetActorLocation() + FVector(0.f, 0.f, 100.f);
+
+        // Draw debug string in world
+        DrawDebugString(
+            GetWorld(),
+            TextLocation,
+            DamageText,
+            nullptr,
+            TextColor,
+            2.0f, // Duration in seconds
+            true,  // Draw shadow
+            2.0f   // Text scale
+        );
+
+        // Update lastHP for next comparison
+        lastHP = health;
+
+        UE_LOG(LogTemp, Log, TEXT("%s took %d damage"), *GetName(), DamageTaken);
+    }
 }
 
 void APaperBase::UpdateAnimation()

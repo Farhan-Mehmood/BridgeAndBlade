@@ -32,6 +32,10 @@ APaperChar::APaperChar()
 
     bIsInventoryOpen = false;
     InventoryWidget = nullptr;
+
+    UnarmedDamage = 1.0f;
+    UnarmedAttackRange = 200.0f;
+    UnarmedAttackSpeed = 1.5f; // Slightly faster
 }
 
 void APaperChar::BeginPlay()
@@ -61,12 +65,14 @@ void APaperChar::BeginPlay()
     }
 
     // Test crafting
-    AddItemToInventory(TEXT("Wood"), 5);
-    //AddItemToInventory(TEXT("Stone"), 10);
+    AddItemToInventory(TEXT("Wood"), 15);
+    AddItemToInventory(TEXT("Stone"), 10);
 
     CraftItem(TEXT("WoodSword"));
-	//CraftItem(TEXT("StoneSword"));
-    //EquipWeapon(1);
+	CraftItem(TEXT("StoneSword"));
+    EquipWeapon(0);
+
+	AddItemToInventory(TEXT("Meat"), 5);
 }
 
 void APaperChar::Tick(float DeltaTime)
@@ -427,7 +433,7 @@ void APaperChar::UnequipWeapon()
 
 void APaperChar::Attack()
 {
-    if (!EquippedWeapon || !bCanAttack)
+    if (!bCanAttack)
     {
         return;
     }
@@ -437,19 +443,22 @@ void APaperChar::Attack()
         return;
     }
 
+    // Check cooldown - use weapon speed if equipped, otherwise unarmed speed
+    float AttackSpeed = EquippedWeapon ? EquippedWeapon->AttackSpeed : UnarmedAttackSpeed;
     float CurrentTime = GetWorld()->GetTimeSeconds();
-    if (CurrentTime - LastAttackTime < (1.0f / EquippedWeapon->AttackSpeed))
+    if (CurrentTime - LastAttackTime < (1.0f / AttackSpeed))
     {
         return;
     }
 
-    // Determine a world-space target position from the mouse cursor.
+    // Determine a world-space target position from the mouse cursor
     APlayerController* PC = Cast<APlayerController>(GetController());
     FVector TargetLocation;
     bool bHaveTarget = false;
+
     if (APaperCharPlayerController* PCC = Cast<APaperCharPlayerController>(PC))
     {
-        // prefer a physics/UI hit under cursor
+        // Prefer a physics/UI hit under cursor
         FHitResult Hit;
         if (PCC->GetHitUnderCursorByChannel(ECC_Visibility, Hit))
         {
@@ -462,7 +471,7 @@ void APaperChar::Attack()
         }
     }
 
-    // Save rotation, rotate to face the target (2D), perform attack, then restore rotation.
+    // Save rotation, rotate to face the target (2D)
     const FRotator OldRotation = GetActorRotation();
     if (bHaveTarget)
     {
@@ -472,29 +481,33 @@ void APaperChar::Attack()
         {
             const FRotator LookRot = Direction.Rotation();
             SetActorRotation(LookRot);
-
-            // Update FacingDirection used by UpdateWeaponRotation (normalized).
+            // Update FacingDirection used by UpdateWeaponRotation (normalized)
             const FVector2D NewFacing = FVector2D(Direction.GetSafeNormal().X, Direction.GetSafeNormal().Y);
             FacingDirection = NewFacing;
         }
     }
 
-    // Perform the weapon attack (WeaponBase uses Attacker rotation to determine sweep direction).
-    EquippedWeapon->PerformAttack(this);
-    LastAttackTime = CurrentTime;
-
-	bCanAttack = false;
-
-    if (EquippedWeapon->AttackMontage)
+    // Perform attack - either with weapon or unarmed
+    if (EquippedWeapon)
     {
-        PlayAnimMontage(EquippedWeapon->AttackMontage);
+        // Weapon attack
+        EquippedWeapon->PerformAttack(this);
+
+        if (EquippedWeapon->AttackMontage)
+        {
+            PlayAnimMontage(EquippedWeapon->AttackMontage);
+        }
+    }
+    else
+    {
+        // Unarmed attack
+        PerformUnarmedAttack();
     }
 
-    // reset flipbook
-	GetSprite()->SetFlipbook(nullptr);
+    // Reset and play weapon attack flipbook
+    GetSprite()->SetFlipbook(nullptr);
 
-	// play flipbook based on facing direction
-   if (FacingDirection.Y > 0.f)
+    if (FacingDirection.Y > 0.f)
     {
         GetSprite()->SetFlipbook(AttackUpFlipbook);
     }
@@ -504,11 +517,51 @@ void APaperChar::Attack()
     }
     else
     {
-       GetSprite()->SetFlipbook(AttackSideFlipbook);
-       if (FacingDirection.X < 0.f)
-       {
-		   // flip sprite for left attack
-		   GetSprite()->SetRelativeScale3D(FVector(-1.f, 1.f, 1.f));
-       }
-   }
+        GetSprite()->SetFlipbook(AttackSideFlipbook);
+        if (FacingDirection.X < 0.f)
+        {
+            // Flip sprite for left attack
+            GetSprite()->SetRelativeScale3D(FVector(-1.f, 1.f, 1.f));
+        }
+    }
+
+    LastAttackTime = CurrentTime;
+    bCanAttack = false;
+}
+
+void APaperChar::PerformUnarmedAttack()
+{
+	UE_LOG(LogTemp, Log, TEXT("Performing unarmed attack"));
+
+    // Simple forward punch/swing detection
+    FVector StartLocation = GetActorLocation();
+    FVector ForwardVector = GetActorForwardVector();
+    FVector EndLocation = StartLocation + (ForwardVector * UnarmedAttackRange);
+
+    FHitResult Hit;
+    FCollisionQueryParams QueryParams;
+    QueryParams.AddIgnoredActor(this);
+
+    // Line trace for unarmed attack
+    if (GetWorld()->LineTraceSingleByChannel(Hit, StartLocation, EndLocation,
+        ECC_Pawn, QueryParams))
+    {
+        DrawDebugLine(GetWorld(), StartLocation, EndLocation, FColor::Blue, false, 0.5f);
+
+        AActor* HitActor = Hit.GetActor();
+        if (HitActor)
+        {
+            APaperBase* PaperChar = Cast<APaperBase>(HitActor);
+            if (PaperChar)
+            {
+                PaperChar->TakeAHit(UnarmedDamage);
+            }
+
+            UE_LOG(LogTemp, Log, TEXT("Unarmed attack hit: %s for %f damage"),
+                *HitActor->GetName(), UnarmedDamage);
+        }
+    }
+
+	// Debug line to visualize attack range
+	DrawDebugLine(GetWorld(), StartLocation, EndLocation, FColor::Red, false, 0.5f);
 }

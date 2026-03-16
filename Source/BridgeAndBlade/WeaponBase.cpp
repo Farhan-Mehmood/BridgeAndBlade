@@ -171,6 +171,8 @@ void AWeaponBase::SwingAttack(AActor* Attacker)
 
 void AWeaponBase::StabAttack(AActor* Attacker)
 {
+	UE_LOG(LogTemp, Log, TEXT("%s performs a stab attack!"), *Attacker->GetName());
+
     // Start stab animation
     bIsAnimating = true;
     AnimationTimer = 0.0f;

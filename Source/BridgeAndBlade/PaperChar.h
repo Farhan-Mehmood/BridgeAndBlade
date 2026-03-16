@@ -27,6 +27,18 @@ public:
 protected:
     virtual void BeginPlay() override;
 
+    // Unarmed combat settings
+    UPROPERTY(EditDefaultsOnly, Category = "Combat")
+    float UnarmedDamage;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Combat")
+    float UnarmedAttackRange;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Combat")
+    float UnarmedAttackSpeed;
+
+	void PerformUnarmedAttack();
+
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Database")
     UDataTable* ItemDataTable;
 

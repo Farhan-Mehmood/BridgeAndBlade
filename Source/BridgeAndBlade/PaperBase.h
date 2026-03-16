@@ -83,4 +83,6 @@ public:
 	void die(TArray<FName> drops, TArray<int32> amounts);
 
 	float cameraDistance;
+
+	int lastHP;
 };
