@@ -68,6 +68,8 @@ void UPlayerUIWidget::SetQuickSlot(int SlotIndex, const FItemData& ItemData)
 	{
 		if (NameWidget) NameWidget->SetText(FText::GetEmpty());
 		SetSlotIcon(IconWidget, nullptr);
+
+		UE_LOG(LogTemp, Log, TEXT("SetQuickSlot: Cleared slot %d"), SlotIndex + 1);
 		return;
 	}
 
@@ -81,6 +83,8 @@ void UPlayerUIWidget::SetQuickSlot(int SlotIndex, const FItemData& ItemData)
 	{
 		SetSlotIcon(IconWidget, ItemData.Icon);
 	}
+
+	UE_LOG(LogTemp, Log, TEXT("SetQuickSlot: slot=%d item=%s icon=%p"), SlotIndex + 1, *ItemData.ItemName.ToString(), (void*)ItemData.Icon);
 }
 
 void UPlayerUIWidget::SetSlotIcon(UImage* IconWidget, UTexture2D* Icon)

@@ -19,6 +19,11 @@ void UInventoryItemWidget::NativeConstruct()
 	{
 		DeleteButton->OnClicked.AddDynamic(this, &UInventoryItemWidget::OnDeleteButtonClicked);
 	}
+	// Bind new assign button if present in the widget
+	if (AssignButton)
+	{
+		AssignButton->OnClicked.AddDynamic(this, &UInventoryItemWidget::OnAssignButtonClicked);
+	}
 }
 
 void UInventoryItemWidget::SetItemData(const FItemData& Data, int Quantity, APaperChar* Character)
@@ -48,6 +53,12 @@ void UInventoryItemWidget::SetItemData(const FItemData& Data, int Quantity, APap
 		EquipButton->SetVisibility(
 			Data.ItemType == EItemType::Weapon ? ESlateVisibility::Visible : ESlateVisibility::Collapsed
 		);
+	}
+
+	// Optionally hide assign button for items that shouldn't be assigned (none by default)
+	if (AssignButton)
+	{
+		AssignButton->SetVisibility(ESlateVisibility::Visible);
 	}
 }
 
@@ -97,4 +108,31 @@ void UInventoryItemWidget::OnDeleteButtonClicked()
 
 	// Update the UI to reflect the change
 	SetItemData(ItemData, ItemQuantity - 1, OwningCharacter);
+}
+
+void UInventoryItemWidget::OnAssignButtonClicked()
+{
+	if (!OwningCharacter)
+		return;
+
+	// Find first empty quick slot, otherwise overwrite slot 0
+	int ChosenSlot = INDEX_NONE;
+	for (int i = 0; i < OwningCharacter->QuickSlots.Num(); ++i)
+	{
+		if (OwningCharacter->QuickSlots[i].IsNone())
+		{
+			ChosenSlot = i;
+			break;
+		}
+	}
+	if (ChosenSlot == INDEX_NONE && OwningCharacter->QuickSlots.Num() > 0)
+	{
+		ChosenSlot = 0;
+	}
+
+	if (ChosenSlot != INDEX_NONE)
+	{
+		OwningCharacter->AssignQuickSlot(ChosenSlot, ItemData.ItemName);
+		UE_LOG(LogTemp, Log, TEXT("Assigned item %s to quick slot %d"), *ItemData.ItemName.ToString(), ChosenSlot + 1);
+	}
 }

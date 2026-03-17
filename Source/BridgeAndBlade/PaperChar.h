@@ -57,9 +57,7 @@ protected:
     bool bIsInventoryOpen;
     void OnInventoryInput();
 
-    // Quick slots (5)
-    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "QuickSlots")
-    TArray<FName> QuickSlots;
+    
 
     // Player UI
     UPROPERTY(EditDefaultsOnly, Category = "UI")
@@ -71,6 +69,14 @@ protected:
 public:
     virtual void Tick(float DeltaTime) override;
     virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+    // Force refresh of the HUD quick-slot visuals
+    UFUNCTION(BlueprintCallable, Category = "UI")
+    void RefreshQuickSlots();
+
+    // Quick slots (5)
+    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "QuickSlots")
+    TArray<FName> QuickSlots;
 
     UPROPERTY(EditAnywhere, Category = "Components")
     UCameraComponent* Camera;
@@ -91,6 +97,7 @@ public:
 
     UPROPERTY(EditAnywhere, Category = "Input")
     UInputAction* ZoomCameraAction;
+
 
     // Quick slot input actions (bind these in your DefaultMappingContext)
     UPROPERTY(EditAnywhere, Category = "Input")

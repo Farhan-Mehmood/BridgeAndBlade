@@ -39,6 +39,9 @@ protected:
     UPROPERTY(meta = (BindWidget))
 	UButton* DeleteButton;
 
+    UPROPERTY(meta = (BindWidget))
+    UButton* AssignButton;
+
     UPROPERTY()
     FItemData ItemData;
 
@@ -52,4 +55,7 @@ protected:
 
     UFUNCTION()
     void OnDeleteButtonClicked();
+
+    UFUNCTION()
+    void OnAssignButtonClicked();
 };

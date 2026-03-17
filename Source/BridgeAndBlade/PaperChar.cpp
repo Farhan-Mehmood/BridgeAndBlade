@@ -86,25 +86,25 @@ void APaperChar::BeginPlay()
 		{
 			PlayerUIWidget->SetOwningCharacter(this);
 			PlayerUIWidget->AddToViewport();
+			PlayerUIWidget->SetVisibility(ESlateVisibility::Visible);
+
+			UE_LOG(LogTemp, Log, TEXT("PlayerUIWidget created."));
+
 			// Initialize health display
 			PlayerUIWidget->SetHealthText(health);
 
-			// Initialize quick slots display
-			UItemDatabase* DB = UItemDatabase::Get(this);
-			for (int i = 0; i < QuickSlots.Num(); ++i)
-			{
-				FItemData ItemData;
-				if (DB && DB->GetItemData(QuickSlots[i], ItemData))
-				{
-					PlayerUIWidget->SetQuickSlot(i, ItemData);
-				}
-				else
-				{
-					// empty slot
-					PlayerUIWidget->SetQuickSlot(i, FItemData());
-				}
-			}
+			// Initialize quick slots display via helper
+			RefreshQuickSlots();
 		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("Failed to create PlayerUIWidget instance from PlayerUIClass"));
+		}
+	}
+	else
+	{
+		if (!PC) UE_LOG(LogTemp, Warning, TEXT("PlayerController missing; cannot create HUD"));
+		if (!PlayerUIClass) UE_LOG(LogTemp, Warning, TEXT("PlayerUIClass not set on APaperChar"));
 	}
 }
 
@@ -125,7 +125,7 @@ void APaperChar::Tick(float DeltaTime)
         }
 	}
 
-	// Sync health to UI
+	// Sync health to UI (tick fallback)
 	if (PlayerUIWidget)
 	{
 		PlayerUIWidget->SetHealthText(health);
@@ -612,31 +612,50 @@ void APaperChar::PerformUnarmedAttack()
 	DrawDebugLine(GetWorld(), StartLocation, EndLocation, FColor::Red, false, 0.5f);
 }
 
-// AssignQuickSlot implementation
+// AssignQuickSlot implementation (push-to-front, remove duplicates, drop last if overflow)
 void APaperChar::AssignQuickSlot(int SlotIndex, FName ItemName)
 {
-	if (!QuickSlots.IsValidIndex(SlotIndex))
+	if (ItemName.IsNone())
 		return;
 
-	QuickSlots[SlotIndex] = ItemName;
+	// Desired capacity (should be 5, initialized in constructor)
+	const int32 Capacity = QuickSlots.Num() > 0 ? QuickSlots.Num() : 5;
 
-	// update UI
-	if (PlayerUIWidget)
+	// Build new ordered list: item to front, then previous items excluding the item itself
+	TArray<FName> NewSlots;
+	NewSlots.Reserve(Capacity);
+
+	// Insert the new item at front
+	NewSlots.Add(ItemName);
+
+	for (const FName& Existing : QuickSlots)
 	{
-		FItemData ItemData;
-		UItemDatabase* DB = UItemDatabase::Get(this);
-		if (DB && DB->GetItemData(ItemName, ItemData))
-		{
-			PlayerUIWidget->SetQuickSlot(SlotIndex, ItemData);
-		}
-        else
-        {
+		if (NewSlots.Num() >= Capacity)
+			break;
 
-        }
-		{
-			PlayerUIWidget->SetQuickSlot(SlotIndex, FItemData()); // clear
-		}
+		// Skip the item we're inserting (remove duplicates)
+		if (Existing == ItemName)
+			continue;
+
+		NewSlots.Add(Existing);
 	}
+
+	// If we have fewer than capacity (e.g. previously had empty slots), fill with NAME_None
+	while (NewSlots.Num() < Capacity)
+	{
+		NewSlots.Add(NAME_None);
+	}
+
+	QuickSlots = MoveTemp(NewSlots);
+
+	// Log state for debugging
+	for (int32 i = 0; i < QuickSlots.Num(); ++i)
+	{
+		UE_LOG(LogTemp, Log, TEXT("QuickSlot[%d] = %s"), i + 1, QuickSlots[i].IsNone() ? TEXT("None") : *QuickSlots[i].ToString());
+	}
+
+	// Update HUD
+	RefreshQuickSlots();
 }
 
 // UseQuickSlot implementation (basic behavior)
@@ -723,4 +742,26 @@ void APaperChar::OnQuickSlot4()
 void APaperChar::OnQuickSlot5()
 {
 	UseQuickSlot(4);
+}
+
+// Refresh HUD quick-slot visuals
+void APaperChar::RefreshQuickSlots()
+{
+	if (!PlayerUIWidget)
+		return;
+
+	UItemDatabase* DB = UItemDatabase::Get(this);
+	for (int i = 0; i < QuickSlots.Num(); ++i)
+	{
+		FItemData ItemData;
+		if (DB && DB->GetItemData(QuickSlots[i], ItemData))
+		{
+			PlayerUIWidget->SetQuickSlot(i, ItemData);
+		}
+		else
+		{
+			// Pass an empty struct to clear slot
+			PlayerUIWidget->SetQuickSlot(i, FItemData());
+		}
+	}
 }
