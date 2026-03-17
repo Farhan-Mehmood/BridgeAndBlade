@@ -44,7 +44,7 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI|Patrol")
     bool bRequireLineOfSight = true;
 
-private:
+protected:
     FVector SpawnLocation;
     EEnemyState CurrentState;
     float PatrolTimer;
