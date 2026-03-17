@@ -15,6 +15,7 @@ class UInputMappingContext;
 class UInputAction;
 class UCameraComponent;
 class UDataTable;
+class UPlayerUIWidget;
 
 UCLASS()
 class BRIDGEANDBLADE_API APaperChar : public APaperBase
@@ -56,6 +57,17 @@ protected:
     bool bIsInventoryOpen;
     void OnInventoryInput();
 
+    // Quick slots (5)
+    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "QuickSlots")
+    TArray<FName> QuickSlots;
+
+    // Player UI
+    UPROPERTY(EditDefaultsOnly, Category = "UI")
+    TSubclassOf<UPlayerUIWidget> PlayerUIClass;
+
+    UPROPERTY()
+    UPlayerUIWidget* PlayerUIWidget;
+
 public:
     virtual void Tick(float DeltaTime) override;
     virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -79,6 +91,38 @@ public:
 
     UPROPERTY(EditAnywhere, Category = "Input")
     UInputAction* ZoomCameraAction;
+
+    // Quick slot input actions (bind these in your DefaultMappingContext)
+    UPROPERTY(EditAnywhere, Category = "Input")
+    UInputAction* QuickSlot1Action;
+
+    UPROPERTY(EditAnywhere, Category = "Input")
+    UInputAction* QuickSlot2Action;
+
+    UPROPERTY(EditAnywhere, Category = "Input")
+    UInputAction* QuickSlot3Action;
+
+    UPROPERTY(EditAnywhere, Category = "Input")
+    UInputAction* QuickSlot4Action;
+
+    UPROPERTY(EditAnywhere, Category = "Input")
+    UInputAction* QuickSlot5Action;
+
+    // Handlers for quick slot inputs
+    UFUNCTION()
+    void OnQuickSlot1();
+
+    UFUNCTION()
+    void OnQuickSlot2();
+
+    UFUNCTION()
+    void OnQuickSlot3();
+
+    UFUNCTION()
+    void OnQuickSlot4();
+
+    UFUNCTION()
+    void OnQuickSlot5();
 
 
     // Weapon positioning
@@ -137,6 +181,13 @@ public:
 
     UFUNCTION(BlueprintCallable, Category = "UI")
     void ToggleInventory();
+
+    // Quick slot functions
+    UFUNCTION(BlueprintCallable, Category = "QuickSlots")
+    void AssignQuickSlot(int SlotIndex, FName ItemName);
+
+    UFUNCTION(BlueprintCallable, Category = "QuickSlots")
+    void UseQuickSlot(int SlotIndex);
 
     // Movement input handlers
     void MoveUp(const FInputActionValue& Value);

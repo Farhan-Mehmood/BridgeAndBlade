@@ -13,7 +13,9 @@
 #include "Engine/EngineTypes.h"
 #include "Blueprint/UserWidget.h"
 #include "InventoryWidget.h"
+#include "PlayerUIWidget.h"
 
+// In constructor, initialize quick slots to 5 empty entries
 APaperChar::APaperChar()
 {
     PrimaryActorTick.bCanEverTick = true;
@@ -36,6 +38,8 @@ APaperChar::APaperChar()
     UnarmedDamage = 1.0f;
     UnarmedAttackRange = 200.0f;
     UnarmedAttackSpeed = 1.5f; // Slightly faster
+
+	QuickSlots.Init(NAME_None, 5);
 }
 
 void APaperChar::BeginPlay()
@@ -73,6 +77,35 @@ void APaperChar::BeginPlay()
     EquipWeapon(0);
 
 	AddItemToInventory(TEXT("Meat"), 5);
+
+	// Create player HUD
+	if (PC && PlayerUIClass)
+	{
+		PlayerUIWidget = CreateWidget<UPlayerUIWidget>(PC, PlayerUIClass);
+		if (PlayerUIWidget)
+		{
+			PlayerUIWidget->SetOwningCharacter(this);
+			PlayerUIWidget->AddToViewport();
+			// Initialize health display
+			PlayerUIWidget->SetHealthText(health);
+
+			// Initialize quick slots display
+			UItemDatabase* DB = UItemDatabase::Get(this);
+			for (int i = 0; i < QuickSlots.Num(); ++i)
+			{
+				FItemData ItemData;
+				if (DB && DB->GetItemData(QuickSlots[i], ItemData))
+				{
+					PlayerUIWidget->SetQuickSlot(i, ItemData);
+				}
+				else
+				{
+					// empty slot
+					PlayerUIWidget->SetQuickSlot(i, FItemData());
+				}
+			}
+		}
+	}
 }
 
 void APaperChar::Tick(float DeltaTime)
@@ -91,6 +124,12 @@ void APaperChar::Tick(float DeltaTime)
             bCanAttack = true;
         }
 	}
+
+	// Sync health to UI
+	if (PlayerUIWidget)
+	{
+		PlayerUIWidget->SetHealthText(health);
+	}
 }
 
 void APaperChar::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -104,6 +143,13 @@ void APaperChar::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
         EIC->BindAction(ZoomCameraAction, ETriggerEvent::Triggered, this, &APaperChar::ZoomCamera);
         EIC->BindAction(AttackAction, ETriggerEvent::Started, this, &APaperChar::Attack);
         EIC->BindAction(InventoryAction, ETriggerEvent::Started, this, &APaperChar::OnInventoryInput);
+
+        // Quick slot bindings (bind each action to its handler)
+        if (QuickSlot1Action) EIC->BindAction(QuickSlot1Action, ETriggerEvent::Started, this, &APaperChar::OnQuickSlot1);
+        if (QuickSlot2Action) EIC->BindAction(QuickSlot2Action, ETriggerEvent::Started, this, &APaperChar::OnQuickSlot2);
+        if (QuickSlot3Action) EIC->BindAction(QuickSlot3Action, ETriggerEvent::Started, this, &APaperChar::OnQuickSlot3);
+        if (QuickSlot4Action) EIC->BindAction(QuickSlot4Action, ETriggerEvent::Started, this, &APaperChar::OnQuickSlot4);
+        if (QuickSlot5Action) EIC->BindAction(QuickSlot5Action, ETriggerEvent::Started, this, &APaperChar::OnQuickSlot5);
     }
 }
 
@@ -564,4 +610,117 @@ void APaperChar::PerformUnarmedAttack()
 
 	// Debug line to visualize attack range
 	DrawDebugLine(GetWorld(), StartLocation, EndLocation, FColor::Red, false, 0.5f);
+}
+
+// AssignQuickSlot implementation
+void APaperChar::AssignQuickSlot(int SlotIndex, FName ItemName)
+{
+	if (!QuickSlots.IsValidIndex(SlotIndex))
+		return;
+
+	QuickSlots[SlotIndex] = ItemName;
+
+	// update UI
+	if (PlayerUIWidget)
+	{
+		FItemData ItemData;
+		UItemDatabase* DB = UItemDatabase::Get(this);
+		if (DB && DB->GetItemData(ItemName, ItemData))
+		{
+			PlayerUIWidget->SetQuickSlot(SlotIndex, ItemData);
+		}
+        else
+        {
+
+        }
+		{
+			PlayerUIWidget->SetQuickSlot(SlotIndex, FItemData()); // clear
+		}
+	}
+}
+
+// UseQuickSlot implementation (basic behavior)
+void APaperChar::UseQuickSlot(int SlotIndex)
+{
+	if (!QuickSlots.IsValidIndex(SlotIndex))
+		return;
+
+	FName ItemName = QuickSlots[SlotIndex];
+	if (ItemName.IsNone())
+		return;
+
+	UItemDatabase* DB = UItemDatabase::Get(this);
+	if (!DB)
+		return;
+
+	FItemData ItemData;
+	if (!DB->GetItemData(ItemName, ItemData))
+		return;
+
+	switch (ItemData.ItemType)
+	{
+	case EItemType::Weapon:
+		{
+			// Find this weapon in weapon inventory and equip first instance
+			for (int i = 0; i < WeaponInventory.Num(); ++i)
+			{
+				if (WeaponInventory[i] == ItemName)
+				{
+					EquipWeapon(i);
+					return;
+				}
+			}
+
+			// If not present in weapon inventory, add it and equip
+			AddItemToInventory(ItemName, 1);
+			EquipWeapon(WeaponInventory.Num() - 1);
+		}
+		break;
+
+	case EItemType::Consumable:
+		{
+			// Consume one and apply simple effect (example: heal 10)
+			if (RemoveItem(ItemName, 1))
+			{
+				health += 10; // simple heal example
+				if (health < 0) health = 0;
+				// Update UI health immediately
+				if (PlayerUIWidget) PlayerUIWidget->SetHealthText(health);
+			}
+		}
+		break;
+
+	case EItemType::Material:
+	case EItemType::Placeable:
+	default:
+		// No default action; you can implement blueprint override or expand behavior
+		UE_LOG(LogTemp, Log, TEXT("Used quick slot item: %s (no default action)"), *ItemName.ToString());
+		break;
+	}
+}
+
+// Quick slot input handlers
+void APaperChar::OnQuickSlot1()
+{
+	UseQuickSlot(0);
+}
+
+void APaperChar::OnQuickSlot2()
+{
+	UseQuickSlot(1);
+}
+
+void APaperChar::OnQuickSlot3()
+{
+	UseQuickSlot(2);
+}
+
+void APaperChar::OnQuickSlot4()
+{
+	UseQuickSlot(3);
+}
+
+void APaperChar::OnQuickSlot5()
+{
+	UseQuickSlot(4);
 }
