@@ -50,15 +50,21 @@ void UInventoryWidget::RefreshInventory()
     }
 
     // Add weapon inventory
+    TMap<FName, int32> WeaponCounts;
     for (const FName& WeaponName : OwningCharacter->WeaponInventory)
+    {
+        WeaponCounts.FindOrAdd(WeaponName)++;
+    }
+
+    for (const auto& Pair : WeaponCounts)
     {
         UInventoryItemWidget* ItemWidget = CreateWidget<UInventoryItemWidget>(this, ItemWidgetClass);
         if (ItemWidget)
         {
             FItemData ItemData;
-            if (UItemDatabase::Get(this)->GetItemData(WeaponName, ItemData))
+            if (UItemDatabase::Get(this)->GetItemData(Pair.Key, ItemData))
             {
-                ItemWidget->SetItemData(ItemData, 1, OwningCharacter);
+                ItemWidget->SetItemData(ItemData, Pair.Value, OwningCharacter);
                 InventoryScrollBox->AddChild(ItemWidget);
             }
         }

@@ -80,34 +80,51 @@ void UInventoryItemWidget::OnEquipButtonClicked()
 
 void UInventoryItemWidget::OnDeleteButtonClicked()
 {
+	if (!OwningCharacter)
+		return;
+
 	UE_LOG(LogTemp, Warning, TEXT("Delete button clicked for item: %s"), *ItemData.ItemName.ToString());
 
-	if (ItemData.ItemType != EItemType::Weapon)
+	// Try to remove the item from the character.
+	bool bWasRemoved = OwningCharacter->RemoveItem(ItemData.ItemName, 1);
+	
+	if (bWasRemoved)
 	{
-		for (int i = 0; i < OwningCharacter->MaterialInventory.Num(); i++)
+		if (ItemData.ItemType == EItemType::Weapon)
 		{
-			if (OwningCharacter->WeaponInventory[i] == ItemData.ItemName)
-			{
-				OwningCharacter->RemoveItem(ItemData.ItemName, 1);
-				break;
-			}
+			OwningCharacter->UnequipWeapon();
 		}
-	}
-	else
-	{
-		for (int i = 0; i < OwningCharacter->WeaponInventory.Num(); i++)
-		{
-			if (OwningCharacter->WeaponInventory[i] == ItemData.ItemName)
-			{
-				OwningCharacter->UnequipWeapon();
-				OwningCharacter->RemoveItem(ItemData.ItemName, 1);
-				break;
-			}
-		}
-	}
 
-	// Update the UI to reflect the change
-	SetItemData(ItemData, ItemQuantity - 1, OwningCharacter);
+		// Update the UI to reflect the change
+		int32 NewQuantity = ItemQuantity - 1;
+
+		if (NewQuantity <= 0)
+		{
+			// Try removing from quick slots since the player has none left
+			bool bQuickSlotUpdated = false;
+			for (int i = 0; i < OwningCharacter->QuickSlots.Num(); ++i)
+			{
+				if (OwningCharacter->QuickSlots[i] == ItemData.ItemName)
+				{
+					OwningCharacter->QuickSlots[i] = NAME_None;
+					bQuickSlotUpdated = true;
+				}
+			}
+
+			// If we unassigned a quick slot, refresh that specific UI part
+			if (bQuickSlotUpdated)
+			{
+				OwningCharacter->RefreshQuickSlots();
+			}
+
+			// Eliminate the UI element completely from the inventory list when we reach 0
+			RemoveFromParent();
+		}
+		else
+		{
+			SetItemData(ItemData, NewQuantity, OwningCharacter);
+		}
+	}
 }
 
 void UInventoryItemWidget::OnAssignButtonClicked()
