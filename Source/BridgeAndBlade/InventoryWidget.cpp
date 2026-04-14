@@ -4,6 +4,8 @@
 #include "InventoryWidget.h"
 #include "Components/Button.h"
 #include "Components/ScrollBox.h"
+#include "Components/TextBlock.h"
+#include "Components/Image.h"
 #include "PaperChar.h"
 #include "InventoryItemWidget.h"
 #include "CraftingItemWidget.h"
@@ -24,6 +26,7 @@ void UInventoryWidget::SetOwningCharacter(APaperChar* Character)
     OwningCharacter = Character;
     RefreshInventory();
     RefreshCraftingList();
+    RefreshEquipment();
 }
 
 void UInventoryWidget::RefreshInventory()
@@ -69,6 +72,9 @@ void UInventoryWidget::RefreshInventory()
             }
         }
     }
+
+    
+    RefreshEquipment();
 }
 
 void UInventoryWidget::RefreshCraftingList()
@@ -91,6 +97,56 @@ void UInventoryWidget::RefreshCraftingList()
             CraftingScrollBox->AddChild(CraftWidget);
         }
     }
+}
+
+void UInventoryWidget::RefreshEquipment()
+{
+    if (!OwningCharacter) return;
+
+    // Update Stats Text
+    if (DefenseStatText)
+    {
+        FString DefenseString = FString::Printf(TEXT("Defense: %d"), FMath::RoundToInt(OwningCharacter->TotalDefense));
+        DefenseStatText->SetText(FText::FromString(DefenseString));
+    }
+
+    if (AttackStatText)
+    {
+        FString AttackString = FString::Printf(TEXT("Attack: %d"), FMath::RoundToInt(OwningCharacter->TotalAttack));
+        AttackStatText->SetText(FText::FromString(AttackString));
+    }
+
+    // Update Equipped Armor Slots using standard UI Images
+    UItemDatabase* DB = UItemDatabase::Get(this);
+    if (!DB) return;
+
+    // Helper lambda to update an Image component
+    auto UpdateSlotImage = [this, DB](EArmorSlot ArmorSlotId, UImage* SlotImage)
+    {
+        if (!SlotImage) return;
+
+        if (OwningCharacter->EquippedArmor.Contains(ArmorSlotId))
+        {
+            FName EquippedItemName = OwningCharacter->EquippedArmor[ArmorSlotId];
+            FItemData ItemData;
+            
+            // If item has a valid texture icon, apply it
+            if (DB->GetItemData(EquippedItemName, ItemData) && ItemData.Icon != nullptr)
+            {
+                SlotImage->SetBrushFromTexture(ItemData.Icon);
+                SlotImage->SetVisibility(ESlateVisibility::Visible); // Show the icon
+                return;
+            }
+        }
+        
+        // If there is no item equipped, or the item has no icon -> Hide the image
+        SlotImage->SetVisibility(ESlateVisibility::Hidden);
+    };
+
+    UpdateSlotImage(EArmorSlot::Head, HeadSlotIcon);
+    UpdateSlotImage(EArmorSlot::Chest, ChestSlotIcon);
+    UpdateSlotImage(EArmorSlot::Legs, LegsSlotIcon);
+    UpdateSlotImage(EArmorSlot::Boots, BootsSlotIcon);
 }
 
 void UInventoryWidget::OnCloseButtonClicked()

@@ -157,7 +157,7 @@ void APaperEnemy::ExecuteAttack()
 		return;
 	}
 
-	// Range check again (optional)
+	// Range check agai
 	const float DistSq = FVector::DistSquared(GetActorLocation(), TargetPawn->GetActorLocation());
 	if (DistSq > (AttackRange * AttackRange))
 	{

@@ -40,6 +40,12 @@ APaperChar::APaperChar()
     UnarmedAttackSpeed = 1.5f; // Slightly faster
 
 	QuickSlots.Init(NAME_None, 5);
+
+	// Initialize base stats
+	BaseDefense = 0.0f;
+	TotalDefense = 0.0f;
+	BaseAttack = 1.0f; // Default base attack
+	TotalAttack = 1.0f;
 }
 
 void APaperChar::BeginPlay()
@@ -283,6 +289,8 @@ void APaperChar::AddItemToInventory(FName ItemName, int Amount)
     {
     case EItemType::Material:
     case EItemType::Consumable:
+    case EItemType::Placeable:
+    case EItemType::Armor:        
         // Stackable items go into material inventory
         if (MaterialInventory.Contains(ItemName))
         {
@@ -302,19 +310,6 @@ void APaperChar::AddItemToInventory(FName ItemName, int Amount)
         for (int i = 0; i < Amount; ++i)
         {
             WeaponInventory.Add(ItemName);
-        }
-        break;
-
-    case EItemType::Placeable:
-        // Placeables could go into a separate inventory
-        // For now, treat like materials
-        if (MaterialInventory.Contains(ItemName))
-        {
-            MaterialInventory[ItemName] += Amount;
-        }
-        else
-        {
-            MaterialInventory.Add(ItemName, Amount);
         }
         break;
     }
@@ -465,6 +460,15 @@ void APaperChar::EquipWeapon(int InventoryIndex)
         EquippedWeapon->SetActorRelativeLocation(WeaponRelativeLocation);
         EquippedWeapon->SetActorRelativeRotation(WeaponRelativeRotation);
 
+        // Store the name and refresh stats
+        EquippedWeaponName = WeaponName;
+        RecalculateStats();
+
+        // Refresh the UI if it's open
+        if (InventoryWidget && bIsInventoryOpen)
+        {
+            InventoryWidget->RefreshEquipment();
+        }
     }
 }
 
@@ -474,6 +478,15 @@ void APaperChar::UnequipWeapon()
     {
         EquippedWeapon->Destroy();
         EquippedWeapon = nullptr;
+        EquippedWeaponName = NAME_None;
+
+        RecalculateStats();
+
+        // Refresh the UI if it's open
+        if (InventoryWidget && bIsInventoryOpen)
+        {
+            InventoryWidget->RefreshEquipment();
+        }
     }
 }
 
@@ -617,6 +630,21 @@ void APaperChar::AssignQuickSlot(int SlotIndex, FName ItemName)
 {
 	if (ItemName.IsNone())
 		return;
+
+	UItemDatabase* DB = UItemDatabase::Get(this);
+	if (DB)
+	{
+		FItemData ItemData;
+		if (DB->GetItemData(ItemName, ItemData))
+		{
+			// Block armor being added to quick slots programmatically
+			if (ItemData.ItemType == EItemType::Armor)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Cannot assign Armor to Quick Slots."));
+				return;
+			}
+		}
+	}
 
 	// Desired capacity (should be 5, initialized in constructor)
 	const int32 Capacity = QuickSlots.Num() > 0 ? QuickSlots.Num() : 5;
@@ -763,5 +791,122 @@ void APaperChar::RefreshQuickSlots()
 			// Pass an empty struct to clear slot
 			PlayerUIWidget->SetQuickSlot(i, FItemData());
 		}
+	}
+}
+
+void APaperChar::EquipArmor(FName ArmorItemName)
+{
+    if (!ItemDataTable) return;
+
+    // Find the item
+    FString ContextString;
+    FItemData* ItemData = ItemDataTable->FindRow<FItemData>(ArmorItemName, ContextString);
+
+    if (ItemData && ItemData->ItemType == EItemType::Armor)
+    {
+        // Unequip currently equipped armor in that slot first (Refund to inventory)
+        if (EquippedArmor.Contains(ItemData->ArmorSlot))
+        {
+            FName OldArmor = EquippedArmor[ItemData->ArmorSlot];
+            AddItemToInventory(OldArmor, 1);
+        }
+
+        // Equip new armor
+        EquippedArmor.Add(ItemData->ArmorSlot, ArmorItemName);
+
+        // Remove from standard inventory 
+        RemoveItem(ArmorItemName, 1);
+
+        // Refresh stats math
+        RecalculateStats();
+
+        // Refresh the open UI!
+        if (InventoryWidget && bIsInventoryOpen)
+        {
+            InventoryWidget->RefreshInventory(); // Call full refresh to move the item from scrollbox to equip slot
+        }
+    }
+}
+
+void APaperChar::UnequipArmor(EArmorSlot SlotIndex)
+{
+    if (EquippedArmor.Contains(SlotIndex))
+    {
+        FName ArmorToUnequip = EquippedArmor[SlotIndex];
+        AddItemToInventory(ArmorToUnequip, 1); // Give it back to the player
+        EquippedArmor.Remove(SlotIndex);
+        
+        // Refresh stats math
+        RecalculateStats();
+
+        // Refresh the open UI
+        if (InventoryWidget && bIsInventoryOpen)
+        {
+            InventoryWidget->RefreshInventory();
+        }
+    }
+}
+
+void APaperChar::RecalculateStats()
+{
+    TotalDefense = BaseDefense;
+
+    UItemDatabase* DB = UItemDatabase::Get(this);
+    if (!DB) return;
+
+    // Calculate Armor Defense
+    for (const auto& ArmorPair : EquippedArmor)
+    {
+        FItemData ArmorData;
+        if (DB->GetItemData(ArmorPair.Value, ArmorData))
+        {
+            TotalDefense += ArmorData.DefenseValue;
+        }
+    }
+
+    // Set Attack Power strictly from the equipped weapon, or fall back to BaseAttack if unarmed
+    if (EquippedWeapon)
+    {
+        TotalAttack = EquippedWeapon->Damage;
+    }
+    else
+    {
+        TotalAttack = BaseAttack; // Unarmed Damage
+    }
+    
+    // Log it out to prove the math is working behind the scenes
+    UE_LOG(LogTemp, Log, TEXT("Recalculated Stats - Attack: %f | Defense: %f"), TotalAttack, TotalDefense);
+}
+
+void APaperChar::TakeAHit(int32 damageAmount)
+{
+	// Calculate how much damage to block based on defense
+	int32 MitigatedDamage = damageAmount - FMath::RoundToInt(TotalDefense);
+
+	// Ensure the player takes at least 1 damage from attacks, so they can't be fully invincible
+	MitigatedDamage = FMath::Max(1, MitigatedDamage);
+
+	// Apply the blocked damage to health
+	health -= MitigatedDamage;
+	
+	// Prevent health from going below zero
+	if (health < 0) health = 0;
+
+	// Update health display immediately
+	if (PlayerUIWidget)
+	{
+		PlayerUIWidget->SetHealthText(health);
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("Raw Damage: %d | Defense: %f | Took Damage: %d | Current Health: %d"), 
+		damageAmount, TotalDefense, MitigatedDamage, health);
+		
+	
+	if (health <= 0)
+	{
+		
+		TArray<FName> emptyDrops;
+		TArray<int32> emptyAmounts;
+		die(emptyDrops, emptyAmounts); 
 	}
 }

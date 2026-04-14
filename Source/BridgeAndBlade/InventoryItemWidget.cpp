@@ -6,6 +6,7 @@
 #include "Components/Image.h"
 #include "Components/Button.h"
 #include "PaperChar.h"
+#include "InventoryWidget.h"
 
 void UInventoryItemWidget::NativeConstruct()
 {
@@ -47,33 +48,48 @@ void UInventoryItemWidget::SetItemData(const FItemData& Data, int Quantity, APap
 		ItemIcon->SetBrushFromTexture(Data.Icon);
 	}
 
-	// Hide equip button for non-weapons
+	// Show equip button for both Weapons AND Armor
 	if (EquipButton)
 	{
-		EquipButton->SetVisibility(
-			Data.ItemType == EItemType::Weapon ? ESlateVisibility::Visible : ESlateVisibility::Collapsed
-		);
+		bool bCanEquip = (Data.ItemType == EItemType::Weapon || Data.ItemType == EItemType::Armor);
+		EquipButton->SetVisibility(bCanEquip ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 	}
 
-	// Optionally hide assign button for items that shouldn't be assigned (none by default)
+	// Hide assign button for Armor
 	if (AssignButton)
 	{
-		AssignButton->SetVisibility(ESlateVisibility::Visible);
+		bool bCanAssign = (Data.ItemType != EItemType::Armor);
+		AssignButton->SetVisibility(bCanAssign ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 	}
 }
 
 void UInventoryItemWidget::OnEquipButtonClicked()
 {
-	if (!OwningCharacter || ItemData.ItemType != EItemType::Weapon)
+	if (!OwningCharacter)
 		return;
 
-	// Find the weapon in inventory and equip it
-	for (int i = 0; i < OwningCharacter->WeaponInventory.Num(); ++i)
+	if (ItemData.ItemType == EItemType::Weapon)
 	{
-		if (OwningCharacter->WeaponInventory[i] == ItemData.ItemName)
+		// Find the weapon in inventory and equip it
+		for (int i = 0; i < OwningCharacter->WeaponInventory.Num(); ++i)
 		{
-			OwningCharacter->EquipWeapon(i);
-			break;
+			if (OwningCharacter->WeaponInventory[i] == ItemData.ItemName)
+			{
+				OwningCharacter->EquipWeapon(i);
+				break;
+			}
+		}
+	}
+	else if (ItemData.ItemType == EItemType::Armor)
+	{
+		// Equip the armor piece
+		OwningCharacter->EquipArmor(ItemData.ItemName);
+
+		// Toggle the inventory so it will update automatically.
+		if (UInventoryWidget* InvWidget = Cast<UInventoryWidget>(GetOuter()))
+		 {
+			 InvWidget->RefreshInventory();
+			 InvWidget->RefreshEquipment();
 		}
 	}
 }

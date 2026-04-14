@@ -11,7 +11,17 @@ enum class EItemType : uint8
     Material UMETA(DisplayName = "Crafting Material"),
     Weapon UMETA(DisplayName = "Weapon"),
     Placeable UMETA(DisplayName = "Placeable Object"),
-    Consumable UMETA(DisplayName = "Consumable")
+    Consumable UMETA(DisplayName = "Consumable"),
+    Armor UMETA(DisplayName = "Armor") 
+};
+
+UENUM(BlueprintType)
+enum class EArmorSlot : uint8
+{
+    Head UMETA(DisplayName = "Head"),
+    Chest UMETA(DisplayName = "Chest"),
+    Legs UMETA(DisplayName = "Legs"),
+    Boots UMETA(DisplayName = "Boots")
 };
 
 USTRUCT(BlueprintType)
@@ -67,6 +77,13 @@ struct FItemData : public FTableRowBase
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon", meta = (EditCondition = "ItemType == EItemType::Weapon"))
     TSubclassOf<class AWeaponBase> WeaponClass;
 
+    // For armor
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Armor", meta = (EditCondition = "ItemType == EItemType::Armor"))
+    EArmorSlot ArmorSlot;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Armor", meta = (EditCondition = "ItemType == EItemType::Armor"))
+    float DefenseValue;
+
     // For placeables
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Placeable", meta = (EditCondition = "ItemType == EItemType::Placeable"))
     TSubclassOf<class AActor> PlaceableClass;
@@ -80,6 +97,8 @@ struct FItemData : public FTableRowBase
         , MaxStackSize(99)
         , bIsCraftable(false)
         , WeaponClass(nullptr)
+        , ArmorSlot(EArmorSlot::Head)
+        , DefenseValue(0.0f)
         , PlaceableClass(nullptr)
     {
     }

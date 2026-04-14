@@ -80,7 +80,7 @@ public:
 	TArray<int32> itemDropAmounts;
 
 	UFUNCTION(BlueprintCallable, Category = "Combat")
-	void TakeAHit(int damageAmount);
+	virtual void TakeAHit(int damageAmount);
 
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	void die(TArray<FName> drops, TArray<int32> amounts);

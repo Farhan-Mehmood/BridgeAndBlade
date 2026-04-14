@@ -144,6 +144,9 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon")
     AWeaponBase* EquippedWeapon;
 
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon")
+    FName EquippedWeaponName;
+
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory")
     TArray<FName> WeaponInventory;
 
@@ -200,4 +203,35 @@ public:
     void MoveUp(const FInputActionValue& Value);
     void MoveRight(const FInputActionValue& Value);
     void ZoomCamera(const FInputActionValue& Value);
+
+public:
+    // Core Attributes
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Attributes")
+    float BaseDefense;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Attributes")
+    float TotalDefense;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Attributes")
+    float BaseAttack;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Attributes")
+    float TotalAttack;
+
+    // Armor Inventory Map - Maps an enum slot to an FName (the item's ID in Data Table)
+    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Inventory|Armor")
+    TMap<EArmorSlot, FName> EquippedArmor;
+
+    // Armor / Stats Functions
+    UFUNCTION(BlueprintCallable, Category = "Inventory|Armor")
+    void EquipArmor(FName ArmorItemName);
+
+    UFUNCTION(BlueprintCallable, Category = "Inventory|Armor")
+    void UnequipArmor(EArmorSlot SlotIndex);
+
+    UFUNCTION(BlueprintCallable, Category = "Attributes")
+    void RecalculateStats();
+
+    // Combat
+    virtual void TakeAHit(int32 damageAmount) override;
 };
