@@ -33,6 +33,9 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime);
 
+	// Receive damage from ApplyDamage / TakeDamage pipeline
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
+
 public:
 
 	UPROPERTY(VisibleAnywhere)

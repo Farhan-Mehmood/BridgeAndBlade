@@ -75,8 +75,22 @@ void AIslandGameMode::TrySpawnTick()
     APaperEnemy* SpawnedEnemy = GetWorld()->SpawnActor<APaperEnemy>(EnemyClass, SpawnLocation, FRotator::ZeroRotator, SpawnParams);
     if (SpawnedEnemy)
     {
+        // Ensure the pawn receives its AI Controller when spawned at runtime.
+        // Either this or set AutoPossessAI on the Pawn / set AI Controller Class in the Blueprint.
+        SpawnedEnemy->SpawnDefaultController();
+
+        if (AController* C = SpawnedEnemy->GetController())
+        {
+            UE_LOG(LogTemp, Log, TEXT("IslandGameMode: Spawned enemy %s at %s (active=%d) possessed by %s"),
+                *SpawnedEnemy->GetName(), *SpawnLocation.ToString(), SpawnedEnemies.Num() + 1, *C->GetName());
+        }
+        else
+        {
+            UE_LOG(LogTemp, Warning, TEXT("IslandGameMode: Spawned enemy %s at %s (active=%d) but no controller was spawned"),
+                *SpawnedEnemy->GetName(), *SpawnLocation.ToString(), SpawnedEnemies.Num() + 1);
+        }
+
         SpawnedEnemies.Add(SpawnedEnemy);
-        UE_LOG(LogTemp, Log, TEXT("IslandGameMode: Spawned enemy %s at %s (active=%d)"), *SpawnedEnemy->GetName(), *SpawnLocation.ToString(), SpawnedEnemies.Num());
     }
 }
 
@@ -90,7 +104,7 @@ void AIslandGameMode::CleanupFarEnemies()
         return;
     }
 
-    FVector PlayerLocation = PlayerPawn->GetActorLocation();
+    FVector PlayerLocation = PlayerPawn->GetActorLocation();    
 
     // Iterate backwards so we can remove safely
     for (int32 i = SpawnedEnemies.Num() - 1; i >= 0; --i)

@@ -13,7 +13,13 @@
 UCLASS()
 class BRIDGEANDBLADE_API APassiveAIController : public AEnemyAIController
 {
-	GENERATED_BODY()
-	
-	virtual void HandleChasing(float DeltaSeconds);
+    GENERATED_BODY()
+
+public:
+    APassiveAIController();
+
+    virtual void OnPossess(APawn* InPawn) override;
+
+    // Override base chasing behavior so passive enemies never enter chasing state
+    virtual void HandleChasing(float DeltaSeconds) override;
 };

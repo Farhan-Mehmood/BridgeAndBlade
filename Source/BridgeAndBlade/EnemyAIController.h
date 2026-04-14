@@ -50,10 +50,11 @@ protected:
     float PatrolTimer;
     FVector CurrentPatrolPoint;
 
-    void HandlePatrolling(float DeltaSeconds);
-    void HandleChasing(float DeltaSeconds);
-    void HandleAttacking(float DeltaSeconds);
-    void HandleReturning(float DeltaSeconds);
+    // Make handlers virtual so subclasses can override behavior
+    virtual void HandlePatrolling(float DeltaSeconds);
+    virtual void HandleChasing(float DeltaSeconds);
+    virtual void HandleAttacking(float DeltaSeconds);
+    virtual void HandleReturning(float DeltaSeconds);
 
     FVector GetRandomPatrolPoint() const;
     bool IsPlayerInPatrolZone(const APawn* PlayerPawn) const;

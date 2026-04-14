@@ -98,6 +98,19 @@ void APaperBase::UpdateAnimation()
     }
 }
 
+float APaperBase::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+    // Convert to integer damage and forward to existing TakeAHit (keeps existing death/drops logic)
+    const int32 DamageInt = FMath::RoundToInt(DamageAmount);
+    if (DamageInt != 0)
+    {
+        TakeAHit(DamageInt);
+    }
+
+    // Return actual damage applied (match engine convention)
+    return DamageAmount;
+}
+
 void APaperBase::TakeAHit(int32 damageAmount)
 {
     health -= damageAmount;
