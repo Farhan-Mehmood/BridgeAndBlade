@@ -75,15 +75,6 @@ void APaperChar::BeginPlay()
         UE_LOG(LogTemp, Error, TEXT("ItemDataTable not assigned in PaperChar Blueprint!"));
     }
 
-    // Test crafting
-    AddItemToInventory(TEXT("Wood"), 15);
-    AddItemToInventory(TEXT("Stone"), 10);
-
-    CraftItem(TEXT("WoodSword"));
-	CraftItem(TEXT("StoneSword"));
-    EquipWeapon(0);
-
-	AddItemToInventory(TEXT("Meat"), 5);
 
 	// Create player HUD
 	if (PC && PlayerUIClass)
