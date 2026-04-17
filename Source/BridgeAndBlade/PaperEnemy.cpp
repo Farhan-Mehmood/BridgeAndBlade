@@ -157,19 +157,8 @@ void APaperEnemy::ExecuteAttack()
 		return;
 	}
 
-	// Range check agai
-	const float DistSq = FVector::DistSquared(GetActorLocation(), TargetPawn->GetActorLocation());
-	if (DistSq > (AttackRange * AttackRange))
-	{
-		UE_LOG(LogTemp, Warning, TEXT("ExecuteAttack aborted: target moved out of range"));
-		if (GetSprite() && IdleFlipbook)
-		{
-			GetSprite()->SetFlipbook(IdleFlipbook);
-		}
-		return;
-	}
-
 	// Play the actual attack flipbook (if available) when executing the hit
+	// We want to play this animation even if the hit will miss
 	if (GetSprite())
 	{
 		const FVector Delta = TargetPawn->GetActorLocation() - GetActorLocation();
@@ -202,9 +191,19 @@ void APaperEnemy::ExecuteAttack()
 		}
 	}
 
-	// Apply damage
-	AController* InstigatorController = Cast<AController>(GetController());
-	UGameplayStatics::ApplyDamage(TargetPawn, DamageAmount, InstigatorController, this, UDamageType::StaticClass());
+	// Range check again just to decide IF we apply damage, BUT don't return entirely
+	const float DistSq = FVector::DistSquared(GetActorLocation(), TargetPawn->GetActorLocation());
+	if (DistSq > (AttackRange * AttackRange))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ExecuteAttack missed: target moved out of range"));
+	}
+	else
+	{
+		// Apply damage since they are still in range
+		AController* InstigatorController = Cast<AController>(GetController());
+		UGameplayStatics::ApplyDamage(TargetPawn, DamageAmount, InstigatorController, this, UDamageType::StaticClass());
+		UE_LOG(LogTemp, Log, TEXT("%s executed attack on %s for %f damage"), *GetName(), *TargetPawn->GetName(), DamageAmount);
+	}
 
 	// Optionally revert to idle flipbook after attack finishes
 	if (GetSprite() && IdleFlipbook)

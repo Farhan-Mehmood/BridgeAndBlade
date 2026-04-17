@@ -6,6 +6,7 @@
 #include "EngineUtils.h"
 #include "Engine/TargetPoint.h"
 #include "NavigationSystem.h"
+#include "Components/ShapeComponent.h"
 #include "TimerManager.h"
 
 AIslandGameMode::AIslandGameMode()
@@ -69,6 +70,18 @@ void AIslandGameMode::TrySpawnTick()
     TSubclassOf<APaperEnemy> EnemyClass = EnemyClasses.IsValidIndex(Idx) ? EnemyClasses[Idx] : nullptr;
     if (!EnemyClass) return;
 
+
+    // Offset the spawn location Z by the specific enemy's capsule half-height so they don't sink
+    if (APaperEnemy* DefaultEnemy = EnemyClass->GetDefaultObject<APaperEnemy>())
+    {
+        // Assuming your APaperEnemy inherits from ACharacter or similar and has a root capsule
+        // If it doesn't use GetCapsuleComponent(), replace with the appropriate component lookup
+        if (UShapeComponent* RootShape = Cast<UShapeComponent>(DefaultEnemy->GetRootComponent()))
+        {
+            SpawnLocation.Z += RootShape->Bounds.BoxExtent.Z;
+        }
+    }
+
     FActorSpawnParameters SpawnParams;
     SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
@@ -76,7 +89,6 @@ void AIslandGameMode::TrySpawnTick()
     if (SpawnedEnemy)
     {
         // Ensure the pawn receives its AI Controller when spawned at runtime.
-        // Either this or set AutoPossessAI on the Pawn / set AI Controller Class in the Blueprint.
         SpawnedEnemy->SpawnDefaultController();
 
         if (AController* C = SpawnedEnemy->GetController())

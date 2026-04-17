@@ -5,6 +5,7 @@
 #include "PaperSpriteComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "DrawDebugHelpers.h"
+#include "Engine/OverlapResult.h"
 #include "PaperBase.h"
 
 // Sets default values
@@ -28,7 +29,10 @@ AWeaponBase::AWeaponBase()
     // Default values
     Damage = 1.0f;
     AttackType = EAttackType::Swing;
-    AttackRange = 150.0f;
+    
+    // Increased base attack range from 150.0f to 250.0f
+    AttackRange = 250.0f;
+    
     AttackSpeed = 1.0f;
     WeaponName = TEXT("Base Weapon");
 
@@ -123,48 +127,48 @@ void AWeaponBase::SwingAttack(AActor* Attacker)
     AnimationTimer = 0.0f;
     CurrentAnimationType = EAttackType::Swing;
 
-    // Perform a sweeping arc attack
     FVector StartLocation = AttackPoint->GetComponentLocation();
+    FVector ForwardVector = Attacker->GetActorForwardVector();
 
-    // Use the attacker's world rotation as the base rotation for sweep directions
-    FRotator BaseRotation = Attacker->GetActorRotation();
-
-    TArray<FHitResult> HitResults;
+    TArray<FOverlapResult> OverlapResults;
     FCollisionQueryParams QueryParams;
     QueryParams.AddIgnoredActor(Attacker);
     QueryParams.AddIgnoredActor(this);
 
-    // Sweep in an arc: compute a fresh sweep direction each iteration (don't mutate ForwardVector)
-    for (int Angle = -45; Angle <= 45; Angle += 15)
-    {
-        FRotator SweepRot = BaseRotation;
-        SweepRot.Roll += Angle;
+    // Instead of tracing lines that can have gaps, we grab everything in a sphere around the attack point
+    FCollisionShape SphereShape = FCollisionShape::MakeSphere(AttackRange);
 
-        // Get forward vector for this rotated yaw
-        FVector SweepDirection = SweepRot.Vector();
-        FVector EndLocation = StartLocation + (SweepDirection * AttackRange);
+    GetWorld()->OverlapMultiByChannel(OverlapResults, StartLocation, FQuat::Identity, ECC_Pawn, SphereShape, QueryParams);
 
-        FHitResult Hit;
-        if (GetWorld() && GetWorld()->LineTraceSingleByChannel(Hit, StartLocation, EndLocation, ECC_Pawn, QueryParams))
-        {
-            HitResults.Add(Hit);
-            DrawDebugLine(GetWorld(), StartLocation, EndLocation, FColor::Red, false, 1.0f, 0, 2.0f);
-        }
-        else if (GetWorld())
-        {
-            // draw misses too for debug
-            DrawDebugLine(GetWorld(), StartLocation, EndLocation, FColor::Blue, false, 1.0f, 0, 1.0f);
-        }
-    }
+    // Draw the full range faintly for debug
+    DrawDebugSphere(GetWorld(), StartLocation, AttackRange, 16, FColor::Yellow, false, 1.0f);
 
-    // Deal damage to all unique hit actors
     TSet<AActor*> HitActors;
-    for (const FHitResult& Hit : HitResults)
+    
+    for (const FOverlapResult& Overlap : OverlapResults)
     {
-        if (Hit.GetActor() && !HitActors.Contains(Hit.GetActor()))
+        AActor* HitActor = Overlap.GetActor();
+        if (HitActor && !HitActors.Contains(HitActor))
         {
-            HitActors.Add(Hit.GetActor());
-            DealDamage(Hit.GetActor(), Attacker);
+            // Now we check if the enemy is in front of the player using Dot Product.
+            // This creates a perfect solid mathematical "Cone" of attack.
+            FVector DirToTarget = (HitActor->GetActorLocation() - StartLocation).GetSafeNormal2D();
+            FVector Forward2D = ForwardVector.GetSafeNormal2D();
+
+            float DotProduct = FVector::DotProduct(Forward2D, DirToTarget);
+
+            // A DotProduct > 0.25 gives a very generous wide arc (approx ~150 degrees front-facing)
+            if (DotProduct > 0.25f)
+            {
+                HitActors.Add(HitActor);
+                DrawDebugLine(GetWorld(), StartLocation, HitActor->GetActorLocation(), FColor::Red, false, 1.0f, 0, 3.0f);
+                DealDamage(HitActor, Attacker);
+            }
+            else
+            {
+                // Ignored targets (behind the player but in range)
+                DrawDebugLine(GetWorld(), StartLocation, HitActor->GetActorLocation(), FColor::Blue, false, 1.0f, 0, 1.0f);
+            }
         }
     }
 }
@@ -178,7 +182,6 @@ void AWeaponBase::StabAttack(AActor* Attacker)
     AnimationTimer = 0.0f;
     CurrentAnimationType = EAttackType::Stab;
 
-    // Perform a straight forward stab
     FVector StartLocation = AttackPoint->GetComponentLocation();
     FVector ForwardVector = Attacker->GetActorForwardVector();
     FVector EndLocation = StartLocation + (ForwardVector * AttackRange);
@@ -188,11 +191,17 @@ void AWeaponBase::StabAttack(AActor* Attacker)
     QueryParams.AddIgnoredActor(Attacker);
     QueryParams.AddIgnoredActor(this);
 
-    if (GetWorld()->LineTraceSingleByChannel(Hit, StartLocation, EndLocation,
-        ECC_Pawn, QueryParams))
+    // Using a thick 45-unit sphere makes it extremely hard to accidentally miss an adjacent stab
+    FCollisionShape SweepShape = FCollisionShape::MakeSphere(45.0f);
+
+    if (GetWorld()->SweepSingleByChannel(Hit, StartLocation, EndLocation, FQuat::Identity, ECC_Pawn, SweepShape, QueryParams))
     {
-        DrawDebugLine(GetWorld(), StartLocation, EndLocation, FColor::Green, false, 1.0f);
+        DrawDebugLine(GetWorld(), StartLocation, EndLocation, FColor::Green, false, 1.0f, 0, 3.0f);
         DealDamage(Hit.GetActor(), Attacker);
+    }
+    else
+    {
+        DrawDebugLine(GetWorld(), StartLocation, EndLocation, FColor::Red, false, 1.0f, 0, 1.0f);
     }
 }
 
@@ -225,9 +234,6 @@ void AWeaponBase::AoEAttack(AActor* Attacker)
 void AWeaponBase::DealDamage(AActor* Target, AActor* Attacker)
 {
     if (!Target) return;
-
-    //UGameplayStatics::ApplyDamage(Target, Damage, Attacker->GetInstigatorController(),
-    //    Attacker, UDamageType::StaticClass());
 
     APaperBase* PaperChar = Cast<APaperBase>(Target);
     if (PaperChar)
