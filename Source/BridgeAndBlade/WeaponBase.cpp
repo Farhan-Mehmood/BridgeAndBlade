@@ -130,6 +130,9 @@ void AWeaponBase::SwingAttack(AActor* Attacker)
     FVector StartLocation = AttackPoint->GetComponentLocation();
     FVector ForwardVector = Attacker->GetActorForwardVector();
 
+    FRotator NewRotation = Attacker->GetActorRotation();
+    SetActorRelativeRotation(NewRotation);
+
     TArray<FOverlapResult> OverlapResults;
     FCollisionQueryParams QueryParams;
     QueryParams.AddIgnoredActor(Attacker);
@@ -185,6 +188,11 @@ void AWeaponBase::StabAttack(AActor* Attacker)
     FVector StartLocation = AttackPoint->GetComponentLocation();
     FVector ForwardVector = Attacker->GetActorForwardVector();
     FVector EndLocation = StartLocation + (ForwardVector * AttackRange);
+    
+    // rotate to face same as actor
+        FRotator NewRotation = Attacker->GetActorRotation();
+		SetActorRelativeRotation(NewRotation);
+
 
     FHitResult Hit;
     FCollisionQueryParams QueryParams;
