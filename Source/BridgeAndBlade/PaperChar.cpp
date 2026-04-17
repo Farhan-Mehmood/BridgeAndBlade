@@ -14,6 +14,7 @@
 #include "Blueprint/UserWidget.h"
 #include "InventoryWidget.h"
 #include "PlayerUIWidget.h"
+#include "SaveGameManager.h"
 
 // In constructor, initialize quick slots to 5 empty entries
 APaperChar::APaperChar()
@@ -112,6 +113,14 @@ void APaperChar::BeginPlay()
 		if (!PC) UE_LOG(LogTemp, Warning, TEXT("PlayerController missing; cannot create HUD"));
 		if (!PlayerUIClass) UE_LOG(LogTemp, Warning, TEXT("PlayerUIClass not set on APaperChar"));
 	}
+
+    // Auto-load save if it exists
+    USaveGameManager* SaveManager = USaveGameManager::Get(this);
+    if (SaveManager && SaveManager->DoesSaveExist(TEXT("PlayerSaveSlot")))
+    {
+        SaveManager->LoadGame(this, TEXT("PlayerSaveSlot"));
+        UE_LOG(LogTemp, Log, TEXT("Save game auto-loaded"));
+    }
 }
 
 void APaperChar::Tick(float DeltaTime)
@@ -149,6 +158,8 @@ void APaperChar::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
         EIC->BindAction(ZoomCameraAction, ETriggerEvent::Triggered, this, &APaperChar::ZoomCamera);
         EIC->BindAction(AttackAction, ETriggerEvent::Started, this, &APaperChar::Attack);
         EIC->BindAction(InventoryAction, ETriggerEvent::Started, this, &APaperChar::OnInventoryInput);
+		EIC->BindAction(QuickSaveAction, ETriggerEvent::Started, this, &APaperChar::QuickSave);
+		EIC->BindAction(QuickLoadAction, ETriggerEvent::Started, this, &APaperChar::QuickLoad);
 
         // Quick slot bindings (bind each action to its handler)
         if (QuickSlot1Action) EIC->BindAction(QuickSlot1Action, ETriggerEvent::Started, this, &APaperChar::OnQuickSlot1);
@@ -647,7 +658,7 @@ void APaperChar::AssignQuickSlot(int SlotIndex, FName ItemName)
 	}
 
 	// Desired capacity (should be 5, initialized in constructor)
-	const int32 Capacity = QuickSlots.Num() > 0 ? QuickSlots.Num() : 5;
+	const int Capacity = QuickSlots.Num() > 0 ? QuickSlots.Num() : 5;
 
 	// Build new ordered list: item to front, then previous items excluding the item itself
 	TArray<FName> NewSlots;
@@ -677,7 +688,7 @@ void APaperChar::AssignQuickSlot(int SlotIndex, FName ItemName)
 	QuickSlots = MoveTemp(NewSlots);
 
 	// Log state for debugging
-	for (int32 i = 0; i < QuickSlots.Num(); ++i)
+	for (int i = 0; i < QuickSlots.Num(); ++i)
 	{
 		UE_LOG(LogTemp, Log, TEXT("QuickSlot[%d] = %s"), i + 1, QuickSlots[i].IsNone() ? TEXT("None") : *QuickSlots[i].ToString());
 	}
@@ -878,10 +889,10 @@ void APaperChar::RecalculateStats()
     UE_LOG(LogTemp, Log, TEXT("Recalculated Stats - Attack: %f | Defense: %f"), TotalAttack, TotalDefense);
 }
 
-void APaperChar::TakeAHit(int32 damageAmount)
+void APaperChar::TakeAHit(int damageAmount)
 {
 	// Calculate how much damage to block based on defense
-	int32 MitigatedDamage = damageAmount - FMath::RoundToInt(TotalDefense);
+	int MitigatedDamage = damageAmount - FMath::RoundToInt(TotalDefense);
 
 	// Ensure the player takes at least 1 damage from attacks, so they can't be fully invincible
 	MitigatedDamage = FMath::Max(1, MitigatedDamage);
@@ -906,7 +917,66 @@ void APaperChar::TakeAHit(int32 damageAmount)
 	{
 		
 		TArray<FName> emptyDrops;
-		TArray<int32> emptyAmounts;
+		TArray<int> emptyAmounts;
 		die(emptyDrops, emptyAmounts); 
 	}
+}
+
+void APaperChar::SaveGame()
+{
+    USaveGameManager* SaveManager = USaveGameManager::Get(this);
+    if (SaveManager)
+    {
+        bool bSuccess = SaveManager->SaveGame(this, TEXT("PlayerSaveSlot"));
+        if (bSuccess)
+        {
+            UE_LOG(LogTemp, Log, TEXT("Game saved successfully"));
+            // Optional: Show UI notification
+        }
+    }
+}
+
+void APaperChar::LoadGame()
+{
+    USaveGameManager* SaveManager = USaveGameManager::Get(this);
+    if (SaveManager)
+    {
+        bool bSuccess = SaveManager->LoadGame(this, TEXT("PlayerSaveSlot"));
+        if (bSuccess)
+        {
+            UE_LOG(LogTemp, Log, TEXT("Game loaded successfully"));
+            // Optional: Show UI notification
+        }
+        else
+        {
+            UE_LOG(LogTemp, Warning, TEXT("No save game found"));
+        }
+    }
+}
+
+void APaperChar::QuickSave()
+{
+    USaveGameManager* SaveManager = USaveGameManager::Get(this);
+    if (SaveManager)
+    {
+        SaveManager->SaveGame(this, TEXT("QuickSaveSlot"));
+        UE_LOG(LogTemp, Log, TEXT("Quick save completed"));
+    }
+}
+
+void APaperChar::QuickLoad()
+{
+    USaveGameManager* SaveManager = USaveGameManager::Get(this);
+    if (SaveManager)
+    {
+        if (SaveManager->DoesSaveExist(TEXT("QuickSaveSlot")))
+        {
+            SaveManager->LoadGame(this, TEXT("QuickSaveSlot"));
+            UE_LOG(LogTemp, Log, TEXT("Quick load completed"));
+        }
+        else
+        {
+            UE_LOG(LogTemp, Warning, TEXT("No quick save found"));
+        }
+    }
 }

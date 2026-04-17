@@ -6,6 +6,7 @@
 #include "PaperChar.h"
 #include "BridgePromptWidget.h"
 #include "Kismet/GameplayStatics.h"
+#include "SaveGameManager.h"
 
 ABridgeZone::ABridgeZone()
 {
@@ -44,11 +45,22 @@ void ABridgeZone::BeginPlay()
     TriggerVolume->OnComponentBeginOverlap.AddDynamic(this, &ABridgeZone::OnTriggerBeginOverlap);
     TriggerVolume->OnComponentEndOverlap.AddDynamic(this, &ABridgeZone::OnTriggerEndOverlap);
 
-    // Set bridge visibility based on state
-    if (BridgeState == EBridgeZoneState::BuiltCanTravel)
+    // Check save data to see if this bridge was already built
+    USaveGameManager* SaveManager = USaveGameManager::Get(this);
+    if (SaveManager && SaveManager->IsBridgeBuilt(BridgeID))
     {
+        // Bridge was previously built, restore its state
+        BridgeState = EBridgeZoneState::BuiltCanTravel;
         BridgeMesh->SetVisibility(true);
         BridgeMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+        
+        UE_LOG(LogTemp, Log, TEXT("Bridge %s restored from save as built"), *BridgeID.ToString());
+    }
+    else
+    {
+        // Bridge not built yet
+        BridgeMesh->SetVisibility(false);
+        BridgeMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
     }
 }
 
@@ -58,7 +70,7 @@ void ABridgeZone::Tick(float DeltaTime)
 }
 
 void ABridgeZone::OnTriggerBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
-    UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+    UPrimitiveComponent* OtherComp, int OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
     APaperChar* Player = Cast<APaperChar>(OtherActor);
     if (Player)
@@ -72,7 +84,7 @@ void ABridgeZone::OnTriggerBeginOverlap(UPrimitiveComponent* OverlappedComponent
 }
 
 void ABridgeZone::OnTriggerEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
-    UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+    UPrimitiveComponent* OtherComp, int OtherBodyIndex)
 {
     APaperChar* Player = Cast<APaperChar>(OtherActor);
     if (Player && Player == PlayerInZone)
@@ -195,7 +207,14 @@ void ABridgeZone::BuildBridge()
     BridgeMesh->SetVisibility(true);
     BridgeMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 
-    UE_LOG(LogTemp, Log, TEXT("Bridge built!"));
+    // Register with save system
+    USaveGameManager* SaveManager = USaveGameManager::Get(this);
+    if (SaveManager)
+    {
+        SaveManager->RegisterBuiltBridge(BridgeID);
+    }
+
+    UE_LOG(LogTemp, Log, TEXT("Bridge %s built!"), *BridgeID.ToString());
 }
 
 void ABridgeZone::TravelToNextIsland()
@@ -204,6 +223,18 @@ void ABridgeZone::TravelToNextIsland()
     {
         UE_LOG(LogTemp, Error, TEXT("Destination level name not set!"));
         return;
+    }
+
+    // Save the game before traveling
+    APaperChar* Player = Cast<APaperChar>(UGameplayStatics::GetPlayerCharacter(this, 0));
+    if (Player)
+    {
+        USaveGameManager* SaveManager = USaveGameManager::Get(this);
+        if (SaveManager)
+        {
+            SaveManager->SaveGame(Player);
+            UE_LOG(LogTemp, Log, TEXT("Game auto-saved before level transition"));
+        }
     }
 
     UE_LOG(LogTemp, Log, TEXT("Traveling to level: %s"), *DestinationLevelName.ToString());

@@ -72,11 +72,11 @@ protected:
     // Trigger callbacks
     UFUNCTION()
     void OnTriggerBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
-        UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+        UPrimitiveComponent* OtherComp, int OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
     UFUNCTION()
     void OnTriggerEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
-        UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+        UPrimitiveComponent* OtherComp, int OtherBodyIndex);
 
 public:
     // Called by the UI widget
@@ -91,6 +91,10 @@ public:
 
     UFUNCTION(BlueprintCallable, Category = "Bridge")
     bool CanPlayerAffordBridge() const;
+
+    // Unique identifier for this bridge (for save system)
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Bridge Settings")
+    FName BridgeID;
 
 protected:
     void ShowPrompt();

@@ -20,218 +20,236 @@ class UPlayerUIWidget;
 UCLASS()
 class BRIDGEANDBLADE_API APaperChar : public APaperBase
 {
-    GENERATED_BODY()
+	GENERATED_BODY()
 
 public:
-    APaperChar();
-    
+	APaperChar();
+
 protected:
-    virtual void BeginPlay() override;
+	virtual void BeginPlay() override;
 
-    // Unarmed combat settings
-    UPROPERTY(EditDefaultsOnly, Category = "Combat")
-    float UnarmedDamage;
+	// Unarmed combat settings
+	UPROPERTY(EditDefaultsOnly, Category = "Combat")
+	float UnarmedDamage;
 
-    UPROPERTY(EditDefaultsOnly, Category = "Combat")
-    float UnarmedAttackRange;
+	UPROPERTY(EditDefaultsOnly, Category = "Combat")
+	float UnarmedAttackRange;
 
-    UPROPERTY(EditDefaultsOnly, Category = "Combat")
-    float UnarmedAttackSpeed;
+	UPROPERTY(EditDefaultsOnly, Category = "Combat")
+	float UnarmedAttackSpeed;
 
 	void PerformUnarmedAttack();
 
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Database")
-    UDataTable* ItemDataTable;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Database")
+	UDataTable* ItemDataTable;
 
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Movement")
-    FVector2D FacingDirection;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Movement")
+	FVector2D FacingDirection;
 
-    void UpdateWeaponRotation();
+	void UpdateWeaponRotation();
 
-    UPROPERTY(EditDefaultsOnly, Category = "UI")
-    TSubclassOf<class UInventoryWidget> InventoryWidgetClass;
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<class UInventoryWidget> InventoryWidgetClass;
 
-    UPROPERTY()
-    UInventoryWidget* InventoryWidget;
+	UPROPERTY()
+	UInventoryWidget* InventoryWidget;
 
-    bool bIsInventoryOpen;
-    void OnInventoryInput();
-
-    
-
-    // Player UI
-    UPROPERTY(EditDefaultsOnly, Category = "UI")
-    TSubclassOf<UPlayerUIWidget> PlayerUIClass;
-
-    UPROPERTY()
-    UPlayerUIWidget* PlayerUIWidget;
+	bool bIsInventoryOpen;
+	void OnInventoryInput();
 
 public:
-    virtual void Tick(float DeltaTime) override;
-    virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	virtual void Tick(float DeltaTime) override;
+	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-    // Force refresh of the HUD quick-slot visuals
-    UFUNCTION(BlueprintCallable, Category = "UI")
-    void RefreshQuickSlots();
+	// Force refresh of the HUD quick-slot visuals
+	UFUNCTION(BlueprintCallable, Category = "UI")
+	void RefreshQuickSlots();
 
-    // Quick slots (5)
-    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "QuickSlots")
-    TArray<FName> QuickSlots;
+	// Quick slots (5)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "QuickSlots")
+	TArray<FName> QuickSlots;
 
-    UPROPERTY(EditAnywhere, Category = "Components")
-    UCameraComponent* Camera;
-
-
-    // Input
-    UPROPERTY(EditAnywhere, Category = "Input")
-    UInputMappingContext* DefaultMappingContext;
-
-    UPROPERTY(EditAnywhere, Category = "Input")
-    UInputAction* MoveUpAction;
-
-    UPROPERTY(EditAnywhere, Category = "Input")
-    UInputAction* MoveRightAction;
-
-    UPROPERTY(EditAnywhere, Category = "Input")
-    UInputAction* AttackAction;
-
-    UPROPERTY(EditAnywhere, Category = "Input")
-    UInputAction* ZoomCameraAction;
+	UPROPERTY(EditAnywhere, Category = "Components")
+	UCameraComponent* Camera;
 
 
-    // Quick slot input actions (bind these in your DefaultMappingContext)
-    UPROPERTY(EditAnywhere, Category = "Input")
-    UInputAction* QuickSlot1Action;
+	// Input
+	UPROPERTY(EditAnywhere, Category = "Input")
+	UInputMappingContext* DefaultMappingContext;
 
-    UPROPERTY(EditAnywhere, Category = "Input")
-    UInputAction* QuickSlot2Action;
+	UPROPERTY(EditAnywhere, Category = "Input")
+	UInputAction* MoveUpAction;
 
-    UPROPERTY(EditAnywhere, Category = "Input")
-    UInputAction* QuickSlot3Action;
+	UPROPERTY(EditAnywhere, Category = "Input")
+	UInputAction* MoveRightAction;
 
-    UPROPERTY(EditAnywhere, Category = "Input")
-    UInputAction* QuickSlot4Action;
+	UPROPERTY(EditAnywhere, Category = "Input")
+	UInputAction* AttackAction;
 
-    UPROPERTY(EditAnywhere, Category = "Input")
-    UInputAction* QuickSlot5Action;
-
-    // Handlers for quick slot inputs
-    UFUNCTION()
-    void OnQuickSlot1();
-
-    UFUNCTION()
-    void OnQuickSlot2();
-
-    UFUNCTION()
-    void OnQuickSlot3();
-
-    UFUNCTION()
-    void OnQuickSlot4();
-
-    UFUNCTION()
-    void OnQuickSlot5();
+	UPROPERTY(EditAnywhere, Category = "Input")
+	UInputAction* ZoomCameraAction;
 
 
-    // Weapon positioning
-    UPROPERTY(EditDefaultsOnly, Category = "Weapon")
-    FVector WeaponRelativeLocation;
+	// Quick slot input actions (bind these in your DefaultMappingContext)
+	UPROPERTY(EditAnywhere, Category = "Input")
+	UInputAction* QuickSlot1Action;
 
-    UPROPERTY(EditDefaultsOnly, Category = "Weapon")
-    FRotator WeaponRelativeRotation;
+	UPROPERTY(EditAnywhere, Category = "Input")
+	UInputAction* QuickSlot2Action;
+
+	UPROPERTY(EditAnywhere, Category = "Input")
+	UInputAction* QuickSlot3Action;
+
+	UPROPERTY(EditAnywhere, Category = "Input")
+	UInputAction* QuickSlot4Action;
+
+	UPROPERTY(EditAnywhere, Category = "Input")
+	UInputAction* QuickSlot5Action;
+
+	// Handlers for quick slot inputs
+	UFUNCTION()
+	void OnQuickSlot1();
+
+	UFUNCTION()
+	void OnQuickSlot2();
+
+	UFUNCTION()
+	void OnQuickSlot3();
+
+	UFUNCTION()
+	void OnQuickSlot4();
+
+	UFUNCTION()
+	void OnQuickSlot5();
+
+	// save and load actions
+
+	UPROPERTY(EditAnywhere, Category = "Input")
+	UInputAction* QuickSaveAction;
+
+	UPROPERTY(EditAnywhere, Category = "Input")
+	UInputAction* QuickLoadAction;
 
 
-    // Inventory
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon")
-    AWeaponBase* EquippedWeapon;
+	// Weapon positioning
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
+	FVector WeaponRelativeLocation;
 
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon")
-    FName EquippedWeaponName;
-
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory")
-    TArray<FName> WeaponInventory;
-
-    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Inventory")
-    TMap<FName, int> MaterialInventory;
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
+	FRotator WeaponRelativeRotation;
 
 
-    // Inventory functions
-    UFUNCTION(BlueprintCallable, Category = "Inventory")
-    void AddItemToInventory(FName ItemName, int Amount = 1);
+	// Inventory
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon")
+	AWeaponBase* EquippedWeapon;
 
-    UFUNCTION(BlueprintCallable, Category = "Inventory")
-    void EquipWeapon(int InventoryIndex);
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon")
+	FName EquippedWeaponName;
 
-    UFUNCTION(BlueprintCallable, Category = "Inventory")
-    void UnequipWeapon();
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory")
+	TArray<FName> WeaponInventory;
 
-    UFUNCTION(BlueprintCallable, Category = "Inventory")
-    int GetItemCount(FName ItemName) const;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Inventory")
+	TMap<FName, int> MaterialInventory;
 
-    UFUNCTION(BlueprintCallable, Category = "Inventory")
-    bool HasItem(FName ItemName, int Amount = 1) const;
 
-    UFUNCTION(BlueprintCallable, Category = "Inventory")
-    bool RemoveItem(FName ItemName, int Amount = 1);
+	// Inventory functions
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	void AddItemToInventory(FName ItemName, int Amount = 1);
 
-    // Crafting
-    UFUNCTION(BlueprintCallable, Category = "Crafting")
-    bool CanCraftItem(FName ItemName) const;
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	void EquipWeapon(int InventoryIndex);
 
-    UFUNCTION(BlueprintCallable, Category = "Crafting")
-    bool CraftItem(FName ItemName);
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	void UnequipWeapon();
 
-    UFUNCTION(BlueprintCallable, Category = "Combat")
-    void Attack();
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	int GetItemCount(FName ItemName) const;
 
-    float LastAttackTime;
-    bool bCanAttack;
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	bool HasItem(FName ItemName, int Amount = 1) const;
 
-    UPROPERTY(EditAnywhere, Category = "Input")
-    UInputAction* InventoryAction;
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	bool RemoveItem(FName ItemName, int Amount = 1);
 
-    UFUNCTION(BlueprintCallable, Category = "UI")
-    void ToggleInventory();
+	// Crafting
+	UFUNCTION(BlueprintCallable, Category = "Crafting")
+	bool CanCraftItem(FName ItemName) const;
 
-    // Quick slot functions
-    UFUNCTION(BlueprintCallable, Category = "QuickSlots")
-    void AssignQuickSlot(int SlotIndex, FName ItemName);
+	UFUNCTION(BlueprintCallable, Category = "Crafting")
+	bool CraftItem(FName ItemName);
 
-    UFUNCTION(BlueprintCallable, Category = "QuickSlots")
-    void UseQuickSlot(int SlotIndex);
+	UFUNCTION(BlueprintCallable, Category = "Combat")
+	void Attack();
 
-    // Movement input handlers
-    void MoveUp(const FInputActionValue& Value);
-    void MoveRight(const FInputActionValue& Value);
-    void ZoomCamera(const FInputActionValue& Value);
+	float LastAttackTime;
+	bool bCanAttack;
 
-public:
-    // Core Attributes
-    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Attributes")
-    float BaseDefense;
+	UPROPERTY(EditAnywhere, Category = "Input")
+	UInputAction* InventoryAction;
 
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Attributes")
-    float TotalDefense;
+	UFUNCTION(BlueprintCallable, Category = "UI")
+	void ToggleInventory();
 
-    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Attributes")
-    float BaseAttack;
+	// Quick slot functions
+	UFUNCTION(BlueprintCallable, Category = "QuickSlots")
+	void AssignQuickSlot(int SlotIndex, FName ItemName);
 
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Attributes")
-    float TotalAttack;
+	UFUNCTION(BlueprintCallable, Category = "QuickSlots")
+	void UseQuickSlot(int SlotIndex);
 
-    // Armor Inventory Map - Maps an enum slot to an FName (the item's ID in Data Table)
-    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Inventory|Armor")
-    TMap<EArmorSlot, FName> EquippedArmor;
+	// Movement input handlers
+	void MoveUp(const FInputActionValue& Value);
+	void MoveRight(const FInputActionValue& Value);
+	void ZoomCamera(const FInputActionValue& Value);
 
-    // Armor / Stats Functions
-    UFUNCTION(BlueprintCallable, Category = "Inventory|Armor")
-    void EquipArmor(FName ArmorItemName);
+	// Core Attributes
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Attributes")
+	float BaseDefense;
 
-    UFUNCTION(BlueprintCallable, Category = "Inventory|Armor")
-    void UnequipArmor(EArmorSlot SlotIndex);
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Attributes")
+	float TotalDefense;
 
-    UFUNCTION(BlueprintCallable, Category = "Attributes")
-    void RecalculateStats();
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Attributes")
+	float BaseAttack;
 
-    // Combat
-    virtual void TakeAHit(int32 damageAmount) override;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Attributes")
+	float TotalAttack;
+
+	// Armor Inventory Map - Maps an enum slot to an FName (the item's ID in Data Table)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Inventory|Armor")
+	TMap<EArmorSlot, FName> EquippedArmor;
+
+	// Armor / Stats Functions
+	UFUNCTION(BlueprintCallable, Category = "Inventory|Armor")
+	void EquipArmor(FName ArmorItemName);
+
+	UFUNCTION(BlueprintCallable, Category = "Inventory|Armor")
+	void UnequipArmor(EArmorSlot SlotIndex);
+
+	UFUNCTION(BlueprintCallable, Category = "Attributes")
+	void RecalculateStats();
+
+	// Combat
+	virtual void TakeAHit(int damageAmount) override;
+
+	// Save/Load functions
+	UFUNCTION(BlueprintCallable, Category = "Save System")
+	void SaveGame();
+
+	UFUNCTION(BlueprintCallable, Category = "Save System")
+	void LoadGame();
+
+	UFUNCTION(BlueprintCallable, Category = "Save System")
+	void QuickSave();
+
+	UFUNCTION(BlueprintCallable, Category = "Save System")
+	void QuickLoad();
+
+	// Player UI
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<UPlayerUIWidget> PlayerUIClass;
+
+	UPROPERTY()
+	UPlayerUIWidget* PlayerUIWidget;
 };
