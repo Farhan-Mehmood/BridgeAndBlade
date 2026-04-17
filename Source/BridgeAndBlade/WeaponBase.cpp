@@ -22,6 +22,10 @@ AWeaponBase::AWeaponBase()
     WeaponSprite->SetupAttachment(RootComponent);
     WeaponSprite->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
+    // FIX: Rotate the sprite so it points Forward (X-axis) instead of UP (Z-axis)
+    // Adjust Pitch (-90 or 90) depending on which way the hilt/blade needs to face
+    WeaponSprite->SetRelativeRotation(FRotator(-90.0f, 0.0f, 0.0f));
+
     // Create attack point
     AttackPoint = CreateDefaultSubobject<USceneComponent>(TEXT("AttackPoint"));
     AttackPoint->SetupAttachment(WeaponSprite);
@@ -104,6 +108,9 @@ void AWeaponBase::PerformAttack(AActor* Attacker)
     // Make weapon visible during attack
     SetWeaponVisible(true);
 
+    // Physically rotate the entire weapon actor to match the attacker
+    SetActorRotation(Attacker->GetActorRotation());
+
     switch (AttackType)
     {
     case EAttackType::Swing:
@@ -129,9 +136,6 @@ void AWeaponBase::SwingAttack(AActor* Attacker)
 
     FVector StartLocation = AttackPoint->GetComponentLocation();
     FVector ForwardVector = Attacker->GetActorForwardVector();
-
-    FRotator NewRotation = Attacker->GetActorRotation();
-    SetActorRelativeRotation(NewRotation);
 
     TArray<FOverlapResult> OverlapResults;
     FCollisionQueryParams QueryParams;
@@ -189,10 +193,6 @@ void AWeaponBase::StabAttack(AActor* Attacker)
     FVector ForwardVector = Attacker->GetActorForwardVector();
     FVector EndLocation = StartLocation + (ForwardVector * AttackRange);
     
-    // rotate to face same as actor
-        FRotator NewRotation = Attacker->GetActorRotation();
-		SetActorRelativeRotation(NewRotation);
-
 
     FHitResult Hit;
     FCollisionQueryParams QueryParams;
@@ -253,36 +253,53 @@ void AWeaponBase::DealDamage(AActor* Target, AActor* Attacker)
 
 void AWeaponBase::AnimateSwing()
 {
+    AActor* WeaponOwner = GetOwner();
+    if (!WeaponOwner) return;
+
     // Calculate swing progress (0 to 1)
     float Progress = FMath::Clamp(AnimationTimer / SwingDuration, 0.0f, 1.0f);
-
-    // Use a sine wave for smooth swing motion (goes from -1 to 1 and back)
     float SwingProgress = FMath::Sin(Progress * PI);
 
-    // Apply rotation
-    FRotator NewRotation = InitialRelativeRotation;
-    NewRotation.Roll += SwingAngle * SwingProgress;
-    WeaponSprite->SetRelativeRotation(NewRotation);
+    // Swing the yaw using the Owner's world rotation as a base!
+    FRotator BaseRotation = WeaponOwner->GetActorRotation();
+    BaseRotation.Yaw += SwingAngle * SwingProgress;
+
+    // Rotate the entire Actor
+    SetActorRotation(BaseRotation);
 }
 
 void AWeaponBase::AnimateStab()
 {
+    AActor* WeaponOwner = GetOwner();
+    if (!WeaponOwner) return;
+
     // Calculate stab progress (0 to 1)
     float Progress = FMath::Clamp(AnimationTimer / StabDuration, 0.0f, 1.0f);
-
-    // Use a sine wave for smooth stab motion (goes from 0 to 1 and back)
     float StabProgress = FMath::Sin(Progress * PI);
 
-    // Apply forward movement (assuming weapon faces right in sprite space)
-    FVector NewLocation = InitialRelativeLocation;
-    NewLocation.X += StabDistance * StabProgress;
-    WeaponSprite->SetRelativeLocation(NewLocation);
+    // EXACTLY what the attack hitbox uses - move along the owner's true Forward Vector
+    FVector ForwardVector = WeaponOwner->GetActorForwardVector();
+    
+    // Instead of local space, push the actor forward in actual 3D space
+    FVector NewLocation = WeaponOwner->GetActorLocation() + (ForwardVector * (StabDistance * StabProgress));
+    
+    SetActorLocation(NewLocation);
 }
 
 void AWeaponBase::ResetWeaponTransform()
 {
+    AActor* WeaponOwner = GetOwner();
+
+    // Snap back to the default position on the character
+    if (WeaponOwner)
+    {
+        SetActorLocation(WeaponOwner->GetActorLocation());
+        SetActorRelativeRotation(FRotator::ZeroRotator);
+    }
+    
     WeaponSprite->SetRelativeLocation(InitialRelativeLocation);
     WeaponSprite->SetRelativeRotation(InitialRelativeRotation);
+    
     bIsAnimating = false;
     AnimationTimer = 0.0f;
 

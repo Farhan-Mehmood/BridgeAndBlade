@@ -742,8 +742,16 @@ void APaperChar::UseQuickSlot(int SlotIndex)
 			{
 				health += 10; // simple heal example
 				if (health < 0) health = 0;
+				
 				// Update UI health immediately
 				if (PlayerUIWidget) PlayerUIWidget->SetHealthText(health);
+
+				// CHECK IF THIS WAS THE EXACT LAST ITEM WE HAD
+				if (GetItemCount(ItemName) <= 0)
+				{
+					QuickSlots[SlotIndex] = NAME_None;
+					RefreshQuickSlots();
+				}
 			}
 		}
 		break;
