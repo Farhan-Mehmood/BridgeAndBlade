@@ -23,6 +23,25 @@ void APaperEnemy::BeginPlay()
 	Super::BeginPlay();
 }
 
+void APaperEnemy::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+
+	if (CooldownRemaining > 0.0f)
+	{
+		CooldownRemaining -= DeltaTime;
+
+		GetSprite()->SetFlipbook(CurrentFlipbook);
+
+		UE_LOG(LogTemp, Log, TEXT("%s cooldown ticking down: %f seconds remaining"), *GetName(), CooldownRemaining);
+	}
+	else
+	{
+		CurrentFlipbook = GetSprite() ? GetSprite()->GetFlipbook() : nullptr;
+	}
+}
+
 bool APaperEnemy::CanAttack() const
 {
 	if (!GetWorld())
@@ -96,6 +115,8 @@ bool APaperEnemy::Attack(APawn* TargetPawn)
 			{
 				GetSprite()->SetFlipbook(AttackSideFlipbook);
 				GetSprite()->PlayFromStart();
+				CurrentFlipbook = AttackSideFlipbook;
+				CooldownRemaining = AttackCooldown;
 			}
 		}
 		else
@@ -112,6 +133,8 @@ bool APaperEnemy::Attack(APawn* TargetPawn)
 				{
 					GetSprite()->SetFlipbook(AttackUpFlipbook);
 					GetSprite()->PlayFromStart();
+					CurrentFlipbook = AttackUpFlipbook;
+					CooldownRemaining = AttackCooldown;
 				}
 			}
 			else
@@ -125,6 +148,8 @@ bool APaperEnemy::Attack(APawn* TargetPawn)
 				{
 					GetSprite()->SetFlipbook(AttackDownFlipbook);
 					GetSprite()->PlayFromStart();
+					CurrentFlipbook = AttackDownFlipbook;
+					CooldownRemaining = AttackCooldown;
 				}
 			}
 		}

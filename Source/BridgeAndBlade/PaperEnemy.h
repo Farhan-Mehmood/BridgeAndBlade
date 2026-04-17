@@ -17,6 +17,8 @@ public:
 	APaperEnemy();
 
 	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaTime) override;
+
 	// Expose wind-up state so controllers can respect it
 	bool IsWindingUp() const { return bIsWindingUp; }
 
@@ -69,4 +71,8 @@ private:
 
 	// Called when wind-up finishes to apply the damage
 	void ExecuteAttack();
+
+	float CooldownRemaining = 0.0f;
+
+	UPaperFlipbook* CurrentFlipbook = nullptr;
 };
